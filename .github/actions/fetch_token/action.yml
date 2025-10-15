@@ -18,14 +18,15 @@ runs:
   steps:
     - name: Set Vault Address
       shell: bash
+      id: vault-address
       run: |
         set -euo pipefail
 
         if [ "${{ inputs.vault-instance }}" == "ci-dev" ]; then
-          echo "VAULT_ADDR=https://vault-ci.dev.elastic.dev" >> $GITHUB_ENV
+          echo "url=https://vault-ci.dev.elastic.dev" >> "$GITHUB_OUTPUT"
           echo "Vault address set to CI-DEV."
         elif [ "${{ inputs.vault-instance }}" == "ci-prod" ]; then
-          echo "VAULT_ADDR=https://vault-ci-prod.elastic.dev" >> $GITHUB_ENV
+          echo "url=https://vault-ci-prod.elastic.dev" >> "$GITHUB_OUTPUT"
           echo "Vault address set to CI-PROD."
         else
           echo "::error title=Input Validation Failed::Invalid vault instance: ${{ inputs.vault-instance }}. Must be 'ci-dev' or 'ci-prod'."
@@ -34,6 +35,7 @@ runs:
 
     - name: Retrieve GitHub Workflow Ref and generate Vault Role name
       shell: bash
+      id: vault-role
       run: |
         set -euo pipefail
 
@@ -43,30 +45,30 @@ runs:
         # Generate role name using SHA-256 hash of workflow ref base
         WORKFLOW_HASH=$(echo -n "$WORKFLOW_REF_BASE" | sha256sum | cut -c1-12)
         VAULT_ROLE="token-policy-$WORKFLOW_HASH"
-        echo "Generated role name: $VAULT_ROLE"      
-        echo "VAULT_ROLE=$VAULT_ROLE" >> $GITHUB_ENV
+        echo "Generated role name: $VAULT_ROLE"
+        echo "role=$VAULT_ROLE" >> "$GITHUB_OUTPUT"
 
     - name: "Diagnostic: Log Final Vault Parameters"
       shell: bash
       run: |
         echo "--- Vault Action Input Parameters ---"
-        echo "VAULT_ADDR (URL): ${{ env.VAULT_ADDR }}"
-        echo "VAULT_ROLE: ${{ env.VAULT_ROLE }}"
-        echo "Vault Secrets Path Expected: github/token/${{ env.VAULT_ROLE }}"
+        echo "VAULT_ADDR (URL): ${{ steps.vault-address.outputs.url }}"
+        echo "VAULT_ROLE: ${{ steps.vault-role.outputs.role }}"
+        echo "Vault Secrets Path Expected: github/token/${{ steps.vault-role.outputs.role }}"
         echo "-------------------------------------"
 
     - name: Use Vault Action to login and retrieve Ephemeral GitHub Token
       id: vault-action
       uses: hashicorp/vault-action@4c06c5ccf5c0761b6029f56cfb1dcf5565918a3b
       with:
-        url: ${{ env.VAULT_ADDR }}
-        role: ${{ env.VAULT_ROLE }}
+        url: ${{ steps.vault-address.outputs.url }}
+        role: ${{ steps.vault-role.outputs.role }}
         path: github-oidc
         method: jwt
         jwtGithubAudience: vault
         exportEnv: false
         secrets: |
-          github/token/${{ env.VAULT_ROLE }} token
+          github/token/${{ steps.vault-role.outputs.role }} token
 
     - name: Token status check
       shell: bash
