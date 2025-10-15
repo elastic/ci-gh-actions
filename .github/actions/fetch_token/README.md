@@ -22,4 +22,4 @@ To use this action in your workflow, reference it as follows:
 
 ## Inputs & Steps
 
-See [`action.yaml`](./action.yaml) for a more detailed specification of the inputs and steps of the action.
+See [`action.yml`](./action.yml) for a more detailed specification of the inputs and steps of the action.
