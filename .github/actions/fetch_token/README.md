@@ -11,13 +11,23 @@ The `action.yml` file describes the **fetch_token** action, which is used to ret
 To use this action in your workflow, reference it as follows:
 
 ```yaml
-- uses: actions/checkout@v5
-      
-- name: Fetch ephemeral GitHub token
+permissions:
+  id-token: write
+...
+steps:
+  - uses: actions/checkout@v5
+
+  - name: Fetch ephemeral GitHub token
     id: fetch-token
-    uses: elastic/vault-realizer/.github/actions/fetch_token@main
+    uses: elastic/ci-gh-actions/.github/actions/fetch_token@main
     with:
       vault-instance: "_name_of_the_vault_instance_of_the_role_"
+
+  - name: Use the GitHub token using the gh cli to list the current issues of , for example.
+    run: gh issue list --limit 1 --json createdAt
+    env:
+      GH_TOKEN: ${{ steps.fetch-token.outputs.token }}      
+...
 ```
 
 ## Inputs & Steps
