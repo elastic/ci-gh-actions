@@ -1,0 +1,21 @@
+name: test-fetch_token
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/actions/fetch_token/**'
+      - '.github/workflows/test-fetch_token.yaml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/fetch_token
+        with:
+          vault-instance: "ci-prod"
