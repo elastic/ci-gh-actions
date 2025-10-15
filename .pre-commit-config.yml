@@ -1,0 +1,54 @@
+---
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-xml
+      - id: end-of-file-fixer
+        exclude: |
+          (?x)^(
+              github/changed-files/dist/index.js|
+              snapshoty/run/dist/index.js|
+              updatecli/install/.default-updatecli-version
+          )$
+      - id: mixed-line-ending
+        exclude: |
+          (?x)^(
+              github/changed-files/dist/index.js|
+              snapshoty/run/dist/index.js|
+              updatecli/install/.default-updatecli-version
+          )$
+      - id: trailing-whitespace
+        exclude: |
+          (?x)^(
+              github/changed-files/dist/index.js|
+              snapshoty/run/dist/index.js|
+              updatecli/install/.default-updatecli-version
+          )$
+  - repo: https://github.com/reakaleek/gh-action-readme
+    rev: v0.4.0
+    hooks:
+      - id: action-readme
+        verbose: true
+        args:
+          - --env=VERSION=v1
+
+  - repo: https://github.com/rhysd/actionlint
+    # Support https://github.com/rhysd/actionlint/pull/561
+    rev: 0c610de366faf857ef4b33704ee28edcf85778cc
+    hooks:
+      - id: actionlint
+        exclude: |
+          (?x)^(
+              .github/workflows/test-version-framework.yml
+          )$
+
+  # For GitHub composite actions - use an alternative approach
+  # see https://github.com/rhysd/actionlint/issues/46
+  #- repo: https://github.com/python-jsonschema/check-jsonschema
+  #  rev: 2d21e3da5122221892c195c0cff8ee47973faf4c  # frozen: 0.34.0
+  #  hooks:
+  #    - id: check-github-actions
+  #      files: action\.(yml|yaml)$

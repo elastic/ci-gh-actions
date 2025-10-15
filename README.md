@@ -19,7 +19,7 @@ steps:
 
   - name: Fetch ephemeral GitHub token
     id: fetch-token
-    uses: elastic/ci-gh-actions/.github/actions/fetch_token@main
+    uses: elastic/ci-gh-actions/fetch-github-token@main
     with:
       vault-instance: "_name_of_the_vault_instance_of_the_role_"
 
@@ -32,4 +32,4 @@ steps:
 
 ## Inputs & Steps
 
-See [`action.yml`](./action.yml) for a more detailed specification of the inputs and steps of the action.
+See [`fetch-github-token.yml`](./fetch-github-token.yml) for a more detailed specification of the inputs and steps of the action.
