@@ -5,6 +5,10 @@ inputs:
   vault-instance:
     description: 'Vault instance to connect to (ci-prod or ci-dev)'
     required: true
+  vault-role:
+    description: 'Vault role to assume for GitHub token retrieval'
+    required: false
+    default: ''
   # skip-token-revoke:
   #   description: 'Revoke the Vault token on exit'
   #   default: false
@@ -33,9 +37,10 @@ runs:
           exit 1
         fi
 
-    - name: Retrieve GitHub Workflow Ref and generate Vault Role name
+    - name: Retrieve GitHub Workflow Ref and generate Vault Role name (vault-role input overrides this if provided)
       shell: bash
       id: vault-role
+      if: ${{ inputs.vault-role == '' }}
       run: |
         set -euo pipefail
 
@@ -48,13 +53,27 @@ runs:
         echo "Generated role name: $VAULT_ROLE"
         echo "role=$VAULT_ROLE" >> "$GITHUB_OUTPUT"
 
+    - name: Determine Final Vault Role name
+      shell: bash
+      id: final-vault-role
+      run: |
+        set -euo pipefail
+
+        if [ -n "${{ inputs.vault-role }}" ]; then
+          echo "role=${{ inputs.vault-role }}" >> "$GITHUB_OUTPUT"
+          echo "Using provided vault-role: ${{ inputs.vault-role }}"
+        else
+          echo "role=${{ steps.vault-role.outputs.role }}" >> "$GITHUB_OUTPUT"
+          echo "Using generated vault-role: ${{ steps.vault-role.outputs.role }}"
+        fi
+
     - name: "Diagnostic: Log Final Vault Parameters"
       shell: bash
       run: |
         echo "--- Vault Action Input Parameters ---"
         echo "VAULT_ADDR (URL): ${{ steps.vault-address.outputs.url }}"
-        echo "VAULT_ROLE: ${{ steps.vault-role.outputs.role }}"
-        echo "Vault Secrets Path Expected: github/token/${{ steps.vault-role.outputs.role }}"
+        echo "VAULT_ROLE: ${{ steps.final-vault-role.outputs.role }}"
+        echo "Vault Secrets Path Expected: github/token/${{ steps.final-vault-role.outputs.role }}"
         echo "-------------------------------------"
 
     - name: Use Vault Action to login and retrieve Ephemeral GitHub Token
@@ -62,13 +81,13 @@ runs:
       uses: hashicorp/vault-action@4c06c5ccf5c0761b6029f56cfb1dcf5565918a3b
       with:
         url: ${{ steps.vault-address.outputs.url }}
-        role: ${{ steps.vault-role.outputs.role }}
+        role: ${{ steps.final-vault-role.outputs.role }}
         path: github-oidc
         method: jwt
         jwtGithubAudience: vault
         exportEnv: false
         secrets: |
-          github/token/${{ steps.vault-role.outputs.role }} token
+          github/token/${{ steps.final-vault-role.outputs.role }} token
 
     - name: Token status check
       shell: bash
