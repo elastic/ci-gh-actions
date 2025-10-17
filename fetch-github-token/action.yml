@@ -1,0 +1,103 @@
+name: Get Ephemeral GitHub Token from CI Vault
+description: 'Fetch an ephemeral GitHub token from Vault using OIDC authentication'
+
+inputs:
+  vault-instance:
+    description: 'Vault instance to connect to (ci-prod or ci-dev)'
+    required: true
+  vault-role:
+    description: 'Vault role to assume for GitHub token retrieval'
+    required: false
+    default: ''
+  # skip-token-revoke:
+  #   description: 'Revoke the Vault token on exit'
+  #   default: false
+outputs:
+  token:
+    description: GitHub App installation access token.
+    value: ${{ steps.vault-action.outputs.token }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set Vault Address
+      shell: bash
+      id: vault-address
+      run: |
+        set -euo pipefail
+
+        if [ "${{ inputs.vault-instance }}" == "ci-dev" ]; then
+          echo "url=https://vault-ci.dev.elastic.dev" >> "$GITHUB_OUTPUT"
+          echo "Vault address set to CI-DEV."
+        elif [ "${{ inputs.vault-instance }}" == "ci-prod" ]; then
+          echo "url=https://vault-ci-prod.elastic.dev" >> "$GITHUB_OUTPUT"
+          echo "Vault address set to CI-PROD."
+        else
+          echo "::error title=Input Validation Failed::Invalid vault instance: ${{ inputs.vault-instance }}. Must be 'ci-dev' or 'ci-prod'."
+          exit 1
+        fi
+
+    - name: Retrieve GitHub Workflow Ref and generate Vault Role name (vault-role input overrides this if provided)
+      shell: bash
+      id: vault-role
+      if: ${{ inputs.vault-role == '' }}
+      run: |
+        set -euo pipefail
+
+        echo "Workflow ref: $GITHUB_WORKFLOW_REF"
+        WORKFLOW_REF_BASE="${GITHUB_WORKFLOW_REF%@*}"
+        echo "Workflow ref base for role generation: $WORKFLOW_REF_BASE"
+        # Generate role name using SHA-256 hash of workflow ref base
+        WORKFLOW_HASH=$(echo -n "$WORKFLOW_REF_BASE" | sha256sum | cut -c1-12)
+        VAULT_ROLE="token-policy-$WORKFLOW_HASH"
+        echo "Generated role name: $VAULT_ROLE"
+        echo "role=$VAULT_ROLE" >> "$GITHUB_OUTPUT"
+
+    - name: Determine Final Vault Role name
+      shell: bash
+      id: final-vault-role
+      run: |
+        set -euo pipefail
+
+        if [ -n "${{ inputs.vault-role }}" ]; then
+          echo "role=${{ inputs.vault-role }}" >> "$GITHUB_OUTPUT"
+          echo "Using provided vault-role: ${{ inputs.vault-role }}"
+        else
+          echo "role=${{ steps.vault-role.outputs.role }}" >> "$GITHUB_OUTPUT"
+          echo "Using generated vault-role: ${{ steps.vault-role.outputs.role }}"
+        fi
+
+    - name: "Diagnostic: Log Final Vault Parameters"
+      shell: bash
+      run: |
+        echo "--- Vault Action Input Parameters ---"
+        echo "VAULT_ADDR (URL): ${{ steps.vault-address.outputs.url }}"
+        echo "VAULT_ROLE: ${{ steps.final-vault-role.outputs.role }}"
+        echo "Vault Secrets Path Expected: github/token/${{ steps.final-vault-role.outputs.role }}"
+        echo "-------------------------------------"
+
+    - name: Use Vault Action to login and retrieve Ephemeral GitHub Token
+      id: vault-action
+      uses: hashicorp/vault-action@4c06c5ccf5c0761b6029f56cfb1dcf5565918a3b
+      with:
+        url: ${{ steps.vault-address.outputs.url }}
+        role: ${{ steps.final-vault-role.outputs.role }}
+        path: github-oidc
+        method: jwt
+        jwtGithubAudience: vault
+        exportEnv: false
+        secrets: |
+          github/token/${{ steps.final-vault-role.outputs.role }} token
+
+    - name: Token status check
+      shell: bash
+      run: gh auth status
+      env:
+        GH_TOKEN: ${{ steps.vault-action.outputs.token }}
+
+    # TODO: Token revocation to be implemented as we don't currently do token leasing and use caching instead (https://github.com/elastic/vault-plugin-secrets-github/pull/9). We'd need to disable caching (at least for non-Buildkite tokens) for this to make sense.
+    # - name: Revoke Vault token
+    #   if: ${{ inputs.skip-token-revoke == 'true' || inputs.skip-token-revoke == 'True' || inputs.skip-token-revoke == 'TRUE' }}
+    #   shell: bash
+    #   run: |
+    #     echo "Github Token revoked."
