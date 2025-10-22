@@ -40,10 +40,6 @@ repos:
     rev: 0c610de366faf857ef4b33704ee28edcf85778cc
     hooks:
       - id: actionlint
-        exclude: |
-          (?x)^(
-              .github/workflows/test-version-framework.yml
-          )$
 
   # For GitHub composite actions - use an alternative approach
   # see https://github.com/rhysd/actionlint/issues/46
