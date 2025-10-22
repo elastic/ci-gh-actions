@@ -23,17 +23,19 @@ runs:
     - name: Set Vault Address
       shell: bash
       id: vault-address
+      env:
+        VAULT_INSTANCE: ${{ inputs.vault-instance }}
       run: |
         set -euo pipefail
 
-        if [ "${{ inputs.vault-instance }}" == "ci-dev" ]; then
+        if [[ "$VAULT_INSTANCE" == "ci-dev" ]]; then
           echo "url=https://vault-ci.dev.elastic.dev" >> "$GITHUB_OUTPUT"
           echo "Vault address set to CI-DEV."
-        elif [ "${{ inputs.vault-instance }}" == "ci-prod" ]; then
+        elif [[ "$VAULT_INSTANCE" == "ci-prod" ]]; then
           echo "url=https://vault-ci-prod.elastic.dev" >> "$GITHUB_OUTPUT"
           echo "Vault address set to CI-PROD."
         else
-          echo "::error title=Input Validation Failed::Invalid vault instance: ${{ inputs.vault-instance }}. Must be 'ci-dev' or 'ci-prod'."
+          echo "::error title=Input Validation Failed::Invalid vault instance: $VAULT_INSTANCE. Must be 'ci-dev' or 'ci-prod'."
           exit 1
         fi
 
@@ -56,24 +58,30 @@ runs:
     - name: Determine Final Vault Role name
       shell: bash
       id: final-vault-role
+      env:
+        MANUAL_VAULT_ROLE: ${{ inputs.vault-role }}
+        GENERATED_VAULT_ROLE: ${{ inputs.vault-role == '' && steps.vault-role.outputs.role || '' }}
       run: |
         set -euo pipefail
 
-        if [ -n "${{ inputs.vault-role }}" ]; then
-          echo "role=${{ inputs.vault-role }}" >> "$GITHUB_OUTPUT"
-          echo "Using provided vault-role: ${{ inputs.vault-role }}"
+        if [[ -n "$MANUAL_VAULT_ROLE" ]]; then
+          echo "role=$MANUAL_VAULT_ROLE" >> "$GITHUB_OUTPUT"
+          echo "Using provided vault-role: $MANUAL_VAULT_ROLE"
         else
-          echo "role=${{ steps.vault-role.outputs.role }}" >> "$GITHUB_OUTPUT"
-          echo "Using generated vault-role: ${{ steps.vault-role.outputs.role }}"
+          echo "role=$GENERATED_VAULT_ROLE" >> "$GITHUB_OUTPUT"
+          echo "Using generated vault-role: $GENERATED_VAULT_ROLE"
         fi
 
     - name: "Diagnostic: Log Final Vault Parameters"
       shell: bash
+      env:
+        VAULT_ADDR: ${{ steps.vault-address.outputs.url }}
+        VAULT_ROLE: ${{ steps.final-vault-role.outputs.role }}
       run: |
         echo "--- Vault Action Input Parameters ---"
-        echo "VAULT_ADDR (URL): ${{ steps.vault-address.outputs.url }}"
-        echo "VAULT_ROLE: ${{ steps.final-vault-role.outputs.role }}"
-        echo "Vault Secrets Path Expected: github/token/${{ steps.final-vault-role.outputs.role }}"
+        echo "VAULT_ADDR (URL): $VAULT_ADDR"
+        echo "VAULT_ROLE: $VAULT_ROLE"
+        echo "Vault Secrets Path Expected: github/token/$VAULT_ROLE"
         echo "-------------------------------------"
 
     - name: Use Vault Action to login and retrieve Ephemeral GitHub Token
