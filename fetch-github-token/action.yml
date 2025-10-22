@@ -102,10 +102,3 @@ runs:
       run: gh auth status
       env:
         GH_TOKEN: ${{ steps.vault-action.outputs.token }}
-
-    # TODO: Token revocation to be implemented as we don't currently do token leasing and use caching instead (https://github.com/elastic/vault-plugin-secrets-github/pull/9). We'd need to disable caching (at least for non-Buildkite tokens) for this to make sense.
-    # - name: Revoke Vault token
-    #   if: ${{ inputs.skip-token-revoke == 'true' || inputs.skip-token-revoke == 'True' || inputs.skip-token-revoke == 'TRUE' }}
-    #   shell: bash
-    #   run: |
-    #     echo "Github Token revoked."
