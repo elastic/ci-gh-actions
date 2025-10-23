@@ -1,0 +1,32 @@
+---
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-xml
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: trailing-whitespace
+  - repo: https://github.com/reakaleek/gh-action-readme
+    rev: v0.4.0
+    hooks:
+      - id: action-readme
+        verbose: true
+        args:
+          - --env=VERSION=v1
+
+  - repo: https://github.com/rhysd/actionlint
+    # Support https://github.com/rhysd/actionlint/pull/561
+    rev: 0c610de366faf857ef4b33704ee28edcf85778cc
+    hooks:
+      - id: actionlint
+
+  # For GitHub composite actions - use an alternative approach
+  # see https://github.com/rhysd/actionlint/issues/46
+  #- repo: https://github.com/python-jsonschema/check-jsonschema
+  #  rev: 2d21e3da5122221892c195c0cff8ee47973faf4c  # frozen: 0.34.0
+  #  hooks:
+  #    - id: check-github-actions
+  #      files: action\.(yml|yaml)$
