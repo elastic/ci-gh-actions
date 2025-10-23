@@ -16,7 +16,7 @@ Fetch an ephemeral GitHub token from Vault using OIDC authentication
 | `token` | GitHub App installation access token. |
 <!--/outputs-->
 ## Usage
-<!--usage action="your/action" version="v1"-->
+<!--usage action="elastic/ci-gh-actions**" version="env:VERSION"-->
 ```yaml
 on: push
 steps:
