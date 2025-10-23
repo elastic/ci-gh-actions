@@ -55,28 +55,11 @@ runs:
         echo "Generated role name: $VAULT_ROLE"
         echo "role=$VAULT_ROLE" >> "$GITHUB_OUTPUT"
 
-    - name: Determine Final Vault Role name
-      shell: bash
-      id: final-vault-role
-      env:
-        MANUAL_VAULT_ROLE: ${{ inputs.vault-role }}
-        GENERATED_VAULT_ROLE: ${{ inputs.vault-role == '' && steps.vault-role.outputs.role || '' }}
-      run: |
-        set -euo pipefail
-
-        if [[ -n "$MANUAL_VAULT_ROLE" ]]; then
-          echo "role=$MANUAL_VAULT_ROLE" >> "$GITHUB_OUTPUT"
-          echo "Using provided vault-role: $MANUAL_VAULT_ROLE"
-        else
-          echo "role=$GENERATED_VAULT_ROLE" >> "$GITHUB_OUTPUT"
-          echo "Using generated vault-role: $GENERATED_VAULT_ROLE"
-        fi
-
     - name: "Diagnostic: Log Final Vault Parameters"
       shell: bash
       env:
         VAULT_ADDR: ${{ steps.vault-address.outputs.url }}
-        VAULT_ROLE: ${{ steps.final-vault-role.outputs.role }}
+        VAULT_ROLE: ${{ inputs.vault-role == '' && steps.vault-role.outputs.role || inputs.vault-role }}
       run: |
         echo "--- Vault Action Input Parameters ---"
         echo "VAULT_ADDR (URL): $VAULT_ADDR"
@@ -86,16 +69,18 @@ runs:
 
     - name: Use Vault Action to login and retrieve Ephemeral GitHub Token
       id: vault-action
+      env:
+        VAULT_ROLE: ${{ inputs.vault-role == '' && steps.vault-role.outputs.role || inputs.vault-role }}
       uses: hashicorp/vault-action@4c06c5ccf5c0761b6029f56cfb1dcf5565918a3b # v3.4.0
       with:
         url: ${{ steps.vault-address.outputs.url }}
-        role: ${{ steps.final-vault-role.outputs.role }}
+        role: ${{ env.VAULT_ROLE }}
         path: github-oidc
         method: jwt
         jwtGithubAudience: vault
         exportEnv: false
         secrets: |
-          github/token/${{ steps.final-vault-role.outputs.role }} token
+          github/token/${{ env.VAULT_ROLE }} token
 
     - name: Token status check
       shell: bash
