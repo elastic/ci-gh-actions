@@ -18,12 +18,9 @@ Fetch an ephemeral GitHub token from Vault using OIDC authentication
 ## Usage
 <!--usage action="elastic/ci-gh-actions**" version="env:VERSION"-->
 ```yaml
-on: push
-steps:
 permissions:
   contents: read
   id-token: write
-
 steps:
   - uses: elastic/ci-gh-actions/fetch-github-token@v1
     id: fetch-token
