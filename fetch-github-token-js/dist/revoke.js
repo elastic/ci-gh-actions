@@ -36228,102 +36228,53 @@ module.exports = /*#__PURE__*/JSON.parse('{"application/1d-interleaved-parityfec
 /************************************************************************/
 var __webpack_exports__ = {};
 const core = __nccwpck_require__(7484);
-const crypto = __nccwpck_require__(6982);
 const axios = __nccwpck_require__(7269);
-const exec = __nccwpck_require__(5236);
 
 async function run() {
   try {
-    const vaultInstance = core.getInput('vault-instance', { required: true });
-    let vaultRole = core.getInput('vault-role');
-    let vaultAddr;
+    const skipRevoke = core.getInput('skip-token-revoke') === 'true';
+    if (skipRevoke) {
+      core.info('Skipping Vault token revoke as requested.');
+      return;
+    }
+    const vaultAddr = core.getState('vault-addr');
+    const vaultClientToken = core.getState('vault-client-token');
+    const githubEphemeralToken = core.getState('github-ephemeral-token');
 
-    // Set Vault address
-    if (vaultInstance === 'ci-dev') {
-      vaultAddr = 'https://vault-ci.dev.elastic.dev';
-      core.info('Vault address set to CI-DEV.');
-    } else if (vaultInstance === 'ci-prod') {
-      vaultAddr = 'https://vault-ci-prod.elastic.dev';
-      core.info('Vault address set to CI-PROD.');
-    } else {
-      core.setFailed(`Invalid vault instance: ${vaultInstance}. Must be 'ci-dev' or 'ci-prod'.`);
+    if (!vaultClientToken || !vaultAddr) {
+      core.info('No Vault token or address found in state, skipping revoke.');
       return;
     }
 
-    // Generate vault role if not provided
-    if (!vaultRole) {
-      const workflowRef = process.env.GITHUB_WORKFLOW_REF;
-      if (!workflowRef) {
-        core.setFailed('GITHUB_WORKFLOW_REF environment variable is not set.');
-        return;
-      }
-      const workflowRefBase = workflowRef.split('@')[0];
-      const hash = crypto.createHash('sha256').update(workflowRefBase).digest('hex').slice(0, 12);
-      vaultRole = `token-policy-${hash}`;
-      core.info(`Generated role name: ${vaultRole}`);
-    }
-
-    core.info('--- Vault Action Input Parameters ---');
-    core.info(`VAULT_ADDR (URL): ${vaultAddr}`);
-    core.info(`VAULT_ROLE: ${vaultRole}`);
-    core.info(`Vault Secrets Path Expected: github/token/${vaultRole}`);
-    core.info('-------------------------------------');
-
-    const jwt = await core.getIDToken('vault');
-    const loginUrl = `${vaultAddr}/v1/auth/github-oidc/login`;
-    let loginResp;
+    const githubRevokeUrl = `https://api.github.com/app/installation/token`;
     try {
-      loginResp = await axios.post(loginUrl, {
-        role: vaultRole,
-        jwt: jwt,
-        jwt_github_audience: 'vault'
-      });
+        await axios.delete(githubRevokeUrl,
+            {
+                headers: {
+                    Authorization: `Bearer ${githubEphemeralToken}`,
+                    Accept: 'application/vnd.github+json'
+                }
+            }
+        );
     } catch (err) {
-      core.setFailed(`Vault login failed: ${err.response ? JSON.stringify(err.response.data) : err.message}`);
-      return;
+        core.warning(`Failed to revoke GitHub token: ${err.response ? JSON.stringify(err.response.data) : err.message}`);
     }
 
-    const clientToken = loginResp.data.auth && loginResp.data.auth.client_token;
-    if (!clientToken) {
-      core.setFailed('No client token returned from Vault.');
-      return;
-    }
-
-    const secretUrl = `${vaultAddr}/v1/github/token/${vaultRole}`;
-    let secretResp;
+    const vaultRevokeUrl = `${vaultAddr}/v1/auth/token/revoke-self`;
     try {
-      secretResp = await axios.get(secretUrl, {
-        headers: { 'X-Vault-Token': clientToken }
+      await axios.post(vaultRevokeUrl, {}, {
+        headers: { 'X-Vault-Token': vaultClientToken }
       });
+      core.info('Vault token revoked successfully.');
     } catch (err) {
-      core.setFailed(`Vault secret fetch failed: ${err.response ? JSON.stringify(err.response.data) : err.message}`);
-      return;
+      core.warning(`Failed to revoke Vault token: ${err.response ? JSON.stringify(err.response.data) : err.message}`);
     }
-
-    const githubToken = secretResp.data.data && secretResp.data.data.token;
-    if (!githubToken) {
-      core.setFailed('No GitHub token found in Vault secret response.');
-      return;
-    }
-
-    core.setOutput('token', githubToken);
-
-    try {
-      await exec.exec('gh', ['auth', 'status'], {
-        env: { ...process.env, GH_TOKEN: githubToken }
-      });
-    } catch (err) {
-      core.setFailed(`GitHub token verification failed: ${err.message}`);
-      return;
-    }
-
   } catch (err) {
-    core.setFailed(err.message);
+    core.warning(`Post action error: ${err.message}`);
   }
 }
 
 run();
-
 module.exports = __webpack_exports__;
 /******/ })()
 ;

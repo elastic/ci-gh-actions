@@ -77,6 +77,9 @@ async function run() {
       return;
     }
 
+    core.saveState('vault-client-token', clientToken);
+    core.saveState('vault-addr', vaultAddr);
+    core.saveState('github-ephemeral-token', githubToken);
     core.setOutput('token', githubToken);
 
     try {
