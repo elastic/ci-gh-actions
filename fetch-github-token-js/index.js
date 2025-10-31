@@ -1,6 +1,7 @@
 const core = require('@actions/core');
-const exec = require('@actions/exec');
 const crypto = require('crypto');
+const axios = require('axios');
+const exec = require('@actions/exec');
 
 async function run() {
   try {
@@ -39,32 +40,56 @@ async function run() {
     core.info(`Vault Secrets Path Expected: github/token/${vaultRole}`);
     core.info('-------------------------------------');
 
-    // Authenticate with Vault and fetch token
-    let token = '';
-    await exec.exec('vault', [
-      'login',
-      '-method=jwt',
-      `-path=github-oidc`,
-      `role=${vaultRole}`,
-      `jwtGithubAudience=vault`,
-      `url=${vaultAddr}`
-    ], {
-      listeners: {
-        stdout: (data) => {
-          const output = data.toString();
-          // Parse token from output if needed
-          // Example: token = parseToken(output);
-        }
-      }
-    });
+    const jwt = await core.getIDToken('vault');
+    const loginUrl = `${vaultAddr}/v1/auth/github-oidc/login`;
+    let loginResp;
+    try {
+      loginResp = await axios.post(loginUrl, {
+        role: vaultRole,
+        jwt: jwt,
+        jwt_github_audience: 'vault'
+      });
+    } catch (err) {
+      core.setFailed(`Vault login failed: ${err.response ? JSON.stringify(err.response.data) : err.message}`);
+      return;
+    }
 
-    core.setOutput('token', token);
+    const clientToken = loginResp.data.auth && loginResp.data.auth.client_token;
+    if (!clientToken) {
+      core.setFailed('No client token returned from Vault.');
+      return;
+    }
 
-    // Optionally, check token status with GitHub CLI
-    await exec.exec('gh', ['auth', 'status'], { env: { GITHUB_TOKEN: token } });
+    const secretUrl = `${vaultAddr}/v1/github/token/${vaultRole}`;
+    let secretResp;
+    try {
+      secretResp = await axios.get(secretUrl, {
+        headers: { 'X-Vault-Token': clientToken }
+      });
+    } catch (err) {
+      core.setFailed(`Vault secret fetch failed: ${err.response ? JSON.stringify(err.response.data) : err.message}`);
+      return;
+    }
 
-  } catch (error) {
-    core.setFailed(error.message);
+    const githubToken = secretResp.data.data && secretResp.data.data.token;
+    if (!githubToken) {
+      core.setFailed('No GitHub token found in Vault secret response.');
+      return;
+    }
+
+    core.setOutput('token', githubToken);
+
+    try {
+      await exec.exec('gh', ['auth', 'status'], {
+        env: { ...process.env, GH_TOKEN: githubToken }
+      });
+    } catch (err) {
+      core.setFailed(`GitHub token verification failed: ${err.message}`);
+      return;
+    }
+
+  } catch (err) {
+    core.setFailed(err.message);
   }
 }
 
