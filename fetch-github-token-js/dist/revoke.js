@@ -36254,6 +36254,7 @@ async function run() {
                 }
             }
         );
+        core.info('Successfully revoked GitHub ephemeral token.');
     } catch (err) {
         core.warning(`Failed to revoke GitHub token: ${err.response ? JSON.stringify(err.response.data) : err.message}`);
     }
