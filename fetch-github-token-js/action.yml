@@ -1,0 +1,20 @@
+name: Get Ephemeral GitHub Token from CI Vault
+description: 'Fetch an ephemeral GitHub token from Vault using OIDC authentication'
+inputs:
+  vault-instance:
+    description: 'Vault instance to connect to (ci-prod or ci-dev)'
+    required: true
+  vault-role:
+    description: 'Vault role to assume for GitHub token retrieval'
+    required: false
+    default: ''
+  # skip-token-revoke:
+  #   description: 'Revoke the Vault token on exit'
+  #   default: false
+outputs:
+  token:
+    description: GitHub App installation access token.
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
+  # post: 'cleanup.js'
