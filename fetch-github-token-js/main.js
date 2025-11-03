@@ -2,6 +2,7 @@ const core = require('@actions/core');
 const crypto = require('crypto');
 const axios = require('axios');
 const exec = require('@actions/exec');
+const { Octokit } = require('@octokit/core');
 
 async function run() {
   try {
@@ -82,9 +83,8 @@ async function run() {
     core.setOutput('token', githubToken);
 
     try {
-      await exec.exec('gh', ['auth', 'status'], {
-        env: { ...process.env, GH_TOKEN: githubToken }
-      });
+      const { data } = await Octokit.request("GET /installation/repositories");
+      core.info(`GitHub token has access to ${data.total_count} repositories.`);
     } catch (err) {
       core.setFailed(`GitHub token verification failed: ${err.message}`);
       return;
