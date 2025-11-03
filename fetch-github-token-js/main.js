@@ -2,7 +2,6 @@ const core = require('@actions/core');
 const crypto = require('crypto');
 const axios = require('axios');
 const exec = require('@actions/exec');
-const { Octokit } = require("@octokit/core");
 
 async function run() {
   try {
@@ -82,10 +81,10 @@ async function run() {
     core.saveState('github-ephemeral-token', githubToken);
     core.setOutput('token', githubToken);
 
-    const octokit = new Octokit({ auth: githubToken });
     try {
-      const { data } = await octokit.request("GET /installation/repositories");
-      core.info(`Authenticated as: ${data.login}`);
+      await exec.exec('gh', ['auth', 'status'], {
+        env: { ...process.env, GH_TOKEN: githubToken }
+      });
     } catch (err) {
       core.setFailed(`GitHub token verification failed: ${err.message}`);
       return;
