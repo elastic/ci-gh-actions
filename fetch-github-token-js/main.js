@@ -95,5 +95,6 @@ async function run() {
     core.setFailed(err.message);
   }
 }
+module.exports = { run }; // Needed for unit tests
 
 run();
