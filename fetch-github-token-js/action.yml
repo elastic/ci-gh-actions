@@ -8,10 +8,10 @@ inputs:
     description: 'Vault role to assume for GitHub token retrieval. If not provided, it will be generated based on the workflow ref of the GH Action.'
     required: false
     default: ''
-  revoke:
-    description: 'If true, revoke the GitHub token on exit'
+  skip-token-revoke:
+    description: 'If true, skip revoking the GitHub token on exit'
     required: false
-    default: 'false'
+    default: 'true'
 outputs:
   token:
     description: GitHub App installation access token.
