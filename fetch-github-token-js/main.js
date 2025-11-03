@@ -2,6 +2,8 @@ const core = require('@actions/core');
 const crypto = require('crypto');
 const axios = require('axios');
 const exec = require('@actions/exec');
+const github = require('@actions/github');
+const { Octokit } = require("@octokit/core");
 
 async function run() {
   try {
@@ -23,9 +25,9 @@ async function run() {
 
     // Generate vault role if not provided
     if (!vaultRole) {
-      const workflowRef = process.env.GITHUB_WORKFLOW_REF;
+      const workflowRef = github.context.workflow_ref;
       if (!workflowRef) {
-        core.setFailed('GITHUB_WORKFLOW_REF environment variable is not set.');
+        core.setFailed('github.context.workflow_ref is not set.');
         return;
       }
       const workflowRefBase = workflowRef.split('@')[0];
@@ -81,10 +83,10 @@ async function run() {
     core.saveState('github-ephemeral-token', githubToken);
     core.setOutput('token', githubToken);
 
+    const octokit = new Octokit({ auth: githubToken });
     try {
-      await exec.exec('gh', ['auth', 'status'], {
-        env: { ...process.env, GH_TOKEN: githubToken }
-      });
+      const { data } = await octokit.request("GET /user");
+      core.info(`Authenticated as: ${data.login}`);
     } catch (err) {
       core.setFailed(`GitHub token verification failed: ${err.message}`);
       return;
