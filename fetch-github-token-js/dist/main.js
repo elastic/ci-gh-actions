@@ -37766,7 +37766,8 @@ async function run() {
     core.setOutput('token', githubToken);
 
     try {
-      const { data } = await Octokit.request("GET /installation/repositories");
+      const octokit = new Octokit({ auth: githubToken });
+      const { data } = await octokit.request("GET /installation/repositories");
       core.info(`GitHub token has access to ${data.total_count} repositories.`);
     } catch (err) {
       core.setFailed(`GitHub token verification failed: ${err.message}`);
