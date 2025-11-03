@@ -3,8 +3,8 @@ const axios = require('axios');
 
 async function run() {
   try {
-    const skipRevoke = core.getInput('skip-token-revoke') === 'true';
-    if (skipRevoke) {
+    const revoke = core.getInput('revoke') === 'true';
+    if (!revoke) {
       core.info('Skipping GitHub ephemeral token revoke as requested.');
       return;
     }

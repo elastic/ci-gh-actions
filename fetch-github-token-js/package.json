@@ -2,17 +2,15 @@
   "name": "fetch-github-token-js",
   "version": "1.0.0",
   "description": "GitHub Action to fetch ephemeral GitHub token from Vault using OIDC authentication",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"No tests specified\""
-  },
+  "main": "dist/main.js",
+  "scripts": {},
   "dependencies": {
     "@actions/core": "^1.10.0",
     "@actions/exec": "^1.1.1",
     "axios": "^1.6.7"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=24"
   },
   "license": "MIT",
   "devDependencies": {

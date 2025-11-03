@@ -36258,7 +36258,8 @@ async function run() {
         return;
       }
       const workflowRefBase = workflowRef.split('@')[0];
-      const hash = crypto.createHash('sha256').update(workflowRefBase).digest('hex').slice(0, 12);
+      const VAULT_ROLE_HASH_LENGTH = 12; // Length of hash suffix for role name for uniqueness and brevity
+      const hash = crypto.createHash('sha256').update(workflowRefBase).digest('hex').slice(0, VAULT_ROLE_HASH_LENGTH);
       vaultRole = `token-policy-${hash}`;
       core.info(`Generated role name: ${vaultRole}`);
     }
