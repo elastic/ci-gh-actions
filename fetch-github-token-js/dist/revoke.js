@@ -4086,7 +4086,7 @@ module.exports = desc && typeof desc.get === 'function'
 "use strict";
 
 
-/** @type {import('.')} */
+/** @type {import('./main')} */
 var $defineProperty = Object.defineProperty || false;
 if ($defineProperty) {
 	try {
@@ -4120,7 +4120,7 @@ module.exports = EvalError;
 "use strict";
 
 
-/** @type {import('.')} */
+/** @type {import('./main')} */
 module.exports = Error;
 
 
@@ -4192,7 +4192,7 @@ module.exports = URIError;
 "use strict";
 
 
-/** @type {import('.')} */
+/** @type {import('./main')} */
 module.exports = Object;
 
 
@@ -4214,7 +4214,7 @@ var $TypeError = __nccwpck_require__(3314);
 
 var toStringTag = hasToStringTag ? Symbol.toStringTag : null;
 
-/** @type {import('.')} */
+/** @type {import('./main')} */
 module.exports = function setToStringTag(object, value) {
 	var overrideIfSet = arguments.length > 2 && !!arguments[2] && arguments[2].force;
 	var nonConfigurable = arguments.length > 2 && !!arguments[2] && arguments[2].nonConfigurable;
@@ -6004,7 +6004,7 @@ var originalGetProto = __nccwpck_require__(1311);
 
 var getDunderProto = __nccwpck_require__(6669);
 
-/** @type {import('.')} */
+/** @type {import('./main')} */
 module.exports = reflectGetProto
 	? function getProto(O) {
 		// @ts-expect-error TS can't narrow inside a closure, for some reason
@@ -6046,7 +6046,7 @@ module.exports = Object.getOwnPropertyDescriptor;
 "use strict";
 
 
-/** @type {import('.')} */
+/** @type {import('./main')} */
 var $gOPD = __nccwpck_require__(1174);
 
 if ($gOPD) {
@@ -6072,7 +6072,7 @@ module.exports = $gOPD;
 var origSymbol = typeof Symbol !== 'undefined' && Symbol;
 var hasSymbolSham = __nccwpck_require__(1114);
 
-/** @type {import('.')} */
+/** @type {import('./main')} */
 module.exports = function hasNativeSymbols() {
 	if (typeof origSymbol !== 'function') { return false; }
 	if (typeof Symbol !== 'function') { return false; }
@@ -6146,7 +6146,7 @@ module.exports = function hasSymbols() {
 
 var hasSymbols = __nccwpck_require__(1114);
 
-/** @type {import('.')} */
+/** @type {import('./main')} */
 module.exports = function hasToStringTagShams() {
 	return hasSymbols() && !!Symbol.toStringTag;
 };
@@ -6164,7 +6164,7 @@ var call = Function.prototype.call;
 var $hasOwn = Object.prototype.hasOwnProperty;
 var bind = __nccwpck_require__(7564);
 
-/** @type {import('.')} */
+/** @type {import('./main')} */
 module.exports = bind.call(call, $hasOwn);
 
 
@@ -12925,7 +12925,7 @@ function validateCookieMaxAge (maxAge) {
 
 /**
  * @see https://www.rfc-editor.org/rfc/rfc6265#section-4.1.1
- * @param {import('./index').Cookie} cookie
+ * @param {import('./main').Cookie} cookie
  */
 function stringify (cookie) {
   if (cookie.name.length === 0) {

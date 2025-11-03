@@ -51,11 +51,11 @@ async function run() {
         jwt: jwt,
         jwt_github_audience: 'vault'
       });
+      core.info('Successfully logged into Vault via OIDC.');
     } catch (err) {
       core.setFailed(`Vault login failed: ${err.response ? JSON.stringify(err.response.data) : err.message}`);
       return;
     }
-
     const clientToken = loginResp.data.auth && loginResp.data.auth.client_token;
     if (!clientToken) {
       core.setFailed('No client token returned from Vault.');
@@ -84,7 +84,7 @@ async function run() {
 
     const octokit = new Octokit({ auth: githubToken });
     try {
-      const { data } = await octokit.request("GET /user");
+      const { data } = await octokit.request("GET /installation/repositories");
       core.info(`Authenticated as: ${data.login}`);
     } catch (err) {
       core.setFailed(`GitHub token verification failed: ${err.message}`);
