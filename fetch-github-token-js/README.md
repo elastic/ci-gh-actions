@@ -22,7 +22,7 @@ Fetch an ephemeral GitHub token from Vault using OIDC authentication
 permissions:
   id-token: write
 steps:
-  - uses: elastic/ci-gh-actions/fetch-github-token-js@__last_commit_sha__
+  - uses: elastic/ci-gh-actions/fetch-github-token-js@v1
     id: fetch-token
     with:
       vault-instance: "ci-prod"
