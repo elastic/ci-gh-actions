@@ -25,9 +25,10 @@ async function run() {
 
     // Generate vault role if not provided
     if (!vaultRole) {
-      const workflowRef = github.context.workflow_ref;
+      const workflowRef = github.context.workflow;
+      core.info(`GitHub workflow ref: ${workflowRef}`);
       if (!workflowRef) {
-        core.setFailed('github.context.workflow_ref is not set.');
+        core.setFailed('github.context.workflow is not set.');
         return;
       }
       const workflowRefBase = workflowRef.split('@')[0];
