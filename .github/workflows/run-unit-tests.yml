@@ -14,7 +14,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Install dependencies
-        run: npm install
-      - name: Run tests
-        run: npm test
+      - name: Find and test all packages
+        run: |
+          for dir in $(find . -type f -name package.json -exec dirname {} \;); do
+            echo "Testing in $dir"
+            cd $dir
+            npm install
+            npm test
+            cd -
+          done
