@@ -1,6 +1,5 @@
 const core = require('@actions/core');
 const crypto = require('crypto');
-const fetch = require('node-fetch');
 const { Octokit } = require('@octokit/core');
 
 async function run() {

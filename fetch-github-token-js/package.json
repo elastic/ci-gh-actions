@@ -8,8 +8,7 @@
   },
   "dependencies": {
     "@actions/core": "^1.11.1",
-    "@octokit/core": "^7.0.6",
-    "node-fetch": "^3.3.2"
+    "@octokit/core": "^7.0.6"
   },
   "engines": {
     "node": ">=20"
