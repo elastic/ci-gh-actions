@@ -14,7 +14,7 @@ Fetch an ephemeral GitHub token from Vault using OIDC authentication
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------|----------|---------|
 | `vault-instance`    | Vault instance to connect to (ci-prod or ci-dev)                                                                                   | `true`   | ` `     |
 | `vault-role`        | Vault role to assume for GitHub token retrieval. If not provided, it will be generated based on the workflow ref of the GH Action. | `false`  | ` `     |
-| `skip-token-revoke` | If true, skip revoking the GitHub token on exit                                                                                    | `false`  | `true`  |
+| `skip-token-revoke` | If true, skip revoking the GitHub token on exit                                                                                    | `false`  | `false` |
 <!--/inputs-->
 ## Outputs
 <!--outputs-->

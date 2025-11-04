@@ -11,7 +11,7 @@ inputs:
   skip-token-revoke:
     description: 'If true, skip revoking the GitHub token on exit'
     required: false
-    default: 'true'
+    default: 'false'
 outputs:
   token:
     description: GitHub App installation access token.
