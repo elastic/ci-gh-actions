@@ -1,5 +1,5 @@
 const core = require('@actions/core');
-const axios = require('axios');
+const fetch = require('node-fetch');
 
 async function run() {
   try {
@@ -17,17 +17,21 @@ async function run() {
 
     const githubRevokeUrl = `https://api.github.com/installation/token`;
     try {
-        await axios.delete(githubRevokeUrl,
-            {
-                headers: {
-                    Authorization: `Bearer ${githubEphemeralToken}`,
-                    Accept: 'application/vnd.github+json'
-                }
+        const response = await fetch(githubRevokeUrl, {
+            method: 'DELETE',
+            headers: {
+                Authorization: `Bearer ${githubEphemeralToken}`,
+                Accept: 'application/vnd.github+json'
             }
-        );
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            core.warning(`Failed to revoke GitHub token: ${JSON.stringify(errorData)}`);
+            return;
+        }
         core.info('Successfully revoked GitHub ephemeral token.');
     } catch (err) {
-        core.warning(`Failed to revoke GitHub token: ${err.response ? JSON.stringify(err.response.data) : err.message}`);
+        core.warning(`Failed to revoke GitHub token: ${err.message}`);
     }
   } catch (err) {
     core.warning(`Post action error: ${err.message}`);

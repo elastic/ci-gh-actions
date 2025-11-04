@@ -1,7 +1,6 @@
 const core = require('@actions/core');
 const crypto = require('crypto');
-const axios = require('axios');
-const exec = require('@actions/exec');
+const fetch = require('node-fetch');
 const { Octokit } = require('@octokit/core');
 
 async function run() {
@@ -46,17 +45,27 @@ async function run() {
     const loginUrl = `${vaultAddr}/v1/auth/github-oidc/login`;
     let loginResp;
     try {
-      loginResp = await axios.post(loginUrl, {
-        role: vaultRole,
-        jwt: jwt,
-        jwt_github_audience: 'vault'
+      const response = await fetch(loginUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          role: vaultRole,
+          jwt: jwt,
+          jwt_github_audience: 'vault'
+        })
       });
+      if (!response.ok) {
+        const errorData = await response.json();
+        core.setFailed(`Vault login failed: ${JSON.stringify(errorData)}`);
+        return;
+      }
+      loginResp = await response.json();
       core.info('Successfully logged into Vault via OIDC.');
     } catch (err) {
-      core.setFailed(`Vault login failed: ${err.response ? JSON.stringify(err.response.data) : err.message}`);
+      core.setFailed(`Vault login failed: ${err.message}`);
       return;
     }
-    const clientToken = loginResp.data.auth && loginResp.data.auth.client_token;
+    const clientToken = loginResp.auth && loginResp.auth.client_token;
     if (!clientToken) {
       core.setFailed('No client token returned from Vault.');
       return;
@@ -68,12 +77,22 @@ async function run() {
       secretResp = await axios.get(secretUrl, {
         headers: { 'X-Vault-Token': clientToken }
       });
+      const response = await fetch(secretUrl, {
+        method: 'GET',
+        headers: { 'X-Vault-Token': clientToken }
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        core.setFailed(`Vault secret fetch failed: ${JSON.stringify(errorData)}`);
+        return;
+      }
+      secretResp = await response.json();
     } catch (err) {
-      core.setFailed(`Vault secret fetch failed: ${err.response ? JSON.stringify(err.response.data) : err.message}`);
+      core.setFailed(`Vault secret fetch failed: ${err.message}`);
       return;
     }
 
-    const githubToken = secretResp.data.data && secretResp.data.data.token;
+    const githubToken = secretResp.data && secretResp.data.token;
     if (!githubToken) {
       core.setFailed('No GitHub token found in Vault secret response.');
       return;
