@@ -27,3 +27,16 @@ jobs:
             fi
             cd -
           done
+
+          find . -type f -name package.json -not -path "*/dist/*" -print0 | while IFS= read -r -d '' file; do
+            dir=$(dirname "$file")
+            echo "Testing in $dir"
+            cd "$dir" || continue
+            if [ -f package.json ] && grep -q '"test"' package.json; then
+              npm install
+              npm test
+            else
+              echo "No test script found in $dir, skipping..."
+            fi
+            cd - > /dev/null || exit 1
+          done
