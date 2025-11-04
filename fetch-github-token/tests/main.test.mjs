@@ -1,6 +1,5 @@
 import { jest } from '@jest/globals';
 
-// Mock modules before importing them
 jest.mock('@actions/core', () => ({
   default: {
     getInput: jest.fn(),
@@ -20,7 +19,6 @@ jest.mock('@octokit/core', () => ({
   }))
 }));
 
-// Import after mocking
 const { default: core } = await import('@actions/core');
 
 describe('Vault GitHub Token Action', () => {
@@ -40,7 +38,6 @@ describe('Vault GitHub Token Action', () => {
   });
 
   it('fails if vault-instance is invalid', async () => {
-    // Mock getInput to return 'invalid' for vault-instance
     core.getInput.mockImplementation((name) => {
       if (name === 'vault-instance') return 'invalid';
       return '';
@@ -55,7 +52,6 @@ describe('Vault GitHub Token Action', () => {
   });
 
   it('sets output if token is retrieved', async () => {
-    // Mock all required inputs
     core.getInput.mockImplementation((name) => {
       if (name === 'vault-instance') return 'ci-dev';
       if (name === 'vault-role') return 'test-role';
@@ -64,7 +60,6 @@ describe('Vault GitHub Token Action', () => {
 
     core.getIDToken.mockResolvedValue('fake-jwt');
 
-    // Mock fetch calls for Vault login and secret fetch
     global.fetch
       .mockResolvedValueOnce({
         ok: true,
@@ -91,7 +86,6 @@ describe('Vault GitHub Token Action', () => {
 
     core.getIDToken.mockResolvedValue('fake-jwt');
 
-    // Mock failed vault login
     global.fetch.mockResolvedValueOnce({
       ok: false,
       json: async () => ({ errors: ['Invalid credentials'] })
@@ -114,7 +108,6 @@ describe('Vault GitHub Token Action', () => {
 
     core.getIDToken.mockResolvedValue('fake-jwt');
 
-    // Mock successful login but failed secret fetch
     global.fetch
       .mockResolvedValueOnce({
         ok: true,
