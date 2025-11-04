@@ -16,7 +16,7 @@ jobs:
           node-version: '24'
       - name: Find and test all packages
         run: |
-          find . -type f -name package.json -not -path "*/dist/*" -not -path "*/node_modules/*" -print0 | while IFS= read -r -d '' file; do
+          find . -type f -name package.json -not -path "*/dist/*" -print0 | while IFS= read -r -d '' file; do
             dir=$(dirname "$file")
             echo "Testing in $dir"
             cd "$dir" || continue
