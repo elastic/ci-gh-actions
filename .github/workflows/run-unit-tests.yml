@@ -16,10 +16,14 @@ jobs:
           node-version: '24'
       - name: Find and test all packages
         run: |
-          for dir in $(find . -type f -name package.json -exec dirname {} \;); do
+          for dir in $(find . -type f -name package.json -not -path "*/dist/*" -exec dirname {} \;); do
             echo "Testing in $dir"
             cd $dir
-            npm install
-            npm test
+            if [ -f package.json ] && grep -q '"test"' package.json; then
+              npm install
+              npm test
+            else
+              echo "No test script found in $dir, skipping..."
+            fi
             cd -
           done
