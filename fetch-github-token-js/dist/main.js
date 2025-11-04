@@ -79,9 +79,6 @@ async function run() {
     const secretUrl = `${vaultAddr}/v1/github/token/${vaultRole}`;
     let secretResp;
     try {
-      secretResp = await axios.get(secretUrl, {
-        headers: { 'X-Vault-Token': clientToken }
-      });
       const response = await fetch(secretUrl, {
         method: 'GET',
         headers: { 'X-Vault-Token': clientToken }
