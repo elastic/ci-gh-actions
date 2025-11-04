@@ -1,8 +1,8 @@
-const core = require('@actions/core');
-const crypto = require('crypto');
-const { Octokit } = require('@octokit/core');
+import core from '@actions/core';
+import { Octokit } from '@octokit/core';
+import crypto from 'crypto';
 
-async function run() {
+export async function run() {
   try {
     const vaultInstance = core.getInput('vault-instance', { required: true });
     let vaultRole = core.getInput('vault-role');
@@ -110,6 +110,5 @@ async function run() {
     core.setFailed(err.message);
   }
 }
-module.exports = { run }; // Needed for unit tests
 
 run();

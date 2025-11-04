@@ -1,6 +1,6 @@
-const core = require('@actions/core');
+import core from '@actions/core';
 
-async function run() {
+export async function run() {
   try {
     const skipRevoke = core.getInput('skip-token-revoke') === 'true';
     if (skipRevoke) {
