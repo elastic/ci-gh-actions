@@ -28795,6 +28795,8 @@ async function fetchGitHubTokenFromVault(vaultAddr, vaultRole, clientToken) {
     throw new Error('No GitHub token found in Vault secret response.');
   }
 
+  core.setSecret(githubToken);
+
   return githubToken;
 }
 

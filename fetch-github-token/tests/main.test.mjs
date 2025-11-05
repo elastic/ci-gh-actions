@@ -9,7 +9,8 @@ jest.mock('@actions/core', () => ({
     info: jest.fn(),
     warning: jest.fn(),
     getState: jest.fn(),
-    saveState: jest.fn()
+    saveState: jest.fn(),
+    setSecret: jest.fn()
   }
 }));
 
@@ -35,6 +36,7 @@ describe('Vault GitHub Token Action', () => {
     core.warning = jest.fn();
     core.getState = jest.fn();
     core.saveState = jest.fn();
+    core.setSecret = jest.fn();
   });
 
   describe('getVaultAddress', () => {
