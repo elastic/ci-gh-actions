@@ -2,15 +2,9 @@ import core from '@actions/core';
 
 export async function run() {
   try {
-    const skipRevoke = core.getInput('skip-token-revoke') === 'true';
-    if (skipRevoke) {
-      core.info('Skipping GitHub ephemeral token revoke as requested.');
-      return;
-    }
-    const githubEphemeralToken = core.getState('github-ephemeral-token');
-
+    const githubEphemeralToken = process.env.INPUT_EPHEMERALTOKEN
     if (!githubEphemeralToken) {
-      core.info('No GitHub ephemeral token found in state, skipping revoke.');
+      core.info('No GitHub ephemeral token found in inputs, skipping revoke.');
       return;
     }
 
