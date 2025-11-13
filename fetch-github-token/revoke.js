@@ -1,6 +1,6 @@
-import core from '@actions/core';
+const core = require('@actions/core');
 
-export async function run() {
+async function run() {
   try {
     const githubEphemeralToken = process.env.INPUT_EPHEMERALTOKEN
     if (!githubEphemeralToken) {
