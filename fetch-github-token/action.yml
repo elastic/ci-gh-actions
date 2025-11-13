@@ -92,6 +92,6 @@ runs:
       if: ${{ inputs.skip-token-revoke != 'true' }}
       uses: elastic/ci-gh-actions/with-post-step@new-js-action
       with:
-        main: node ${{ github.action_path }}/../fetch-github-token/dist/revoke.cjs
+        main: echo "Token retrieved successfully"
         post: node ${{ github.action_path }}/../fetch-github-token/dist/revoke.cjs
         ephemeralToken: ${{ steps.vault-action.outputs.token }}
