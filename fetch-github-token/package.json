@@ -14,7 +14,6 @@
     "node": ">=20"
   },
   "license": "MIT",
-  "type": "module",
   "devDependencies": {
     "@vercel/ncc": "^0.38.4",
     "jest": "^30.2.0"
