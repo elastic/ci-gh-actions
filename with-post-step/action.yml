@@ -16,7 +16,7 @@ inputs:
     default: POST
   ephemeralToken:
     description: 'Ephemeral GitHub Token to be revoked on the post step.'
-    required: true
+    required: false
 
 runs:
   using: 'node20'

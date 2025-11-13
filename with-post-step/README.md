@@ -9,7 +9,7 @@ Generic JS Action to execute a main command and set a command as a post step.
 | `main`           | Main command/script.                                     | `true`   | ` `     |
 | `post`           | Post command/script.                                     | `true`   | ` `     |
 | `key`            | Name of the state variable used to detect the post step. | `false`  | `POST`  |
-| `ephemeralToken` | Ephemeral GitHub Token to be revoked on the post step.   | `true`   | ` `     |
+| `ephemeralToken` | Ephemeral GitHub Token to be revoked on the post step.   | `false`  | ` `     |
 <!--/inputs-->
 ## Outputs
 <!--outputs-->
@@ -21,6 +21,9 @@ Generic JS Action to execute a main command and set a command as a post step.
 ```yaml
 on: push
 steps:
-  - uses: your/action@v1
+  - uses: elastic/ci-gh-actions/with-post-step@v1.1
+    with:
+      main: echo "Token retrieved successfully"
+      post: node ${{ github.action_path }}/../fetch-github-token/dist/revoke.cjs
 ```
 <!--/usage-->
