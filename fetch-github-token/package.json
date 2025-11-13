@@ -4,7 +4,7 @@
   "description": "GitHub Action to fetch ephemeral GitHub token from Vault using OIDC authentication",
   "main": "dist/main.js",
   "scripts": {
-    "test": "node --experimental-vm-modules node_modules/.bin/jest"
+    "test:revoke": "node --experimental-vm-modules node_modules/.bin/jest tests/revoke.test.mjs"
   },
   "dependencies": {
     "@actions/core": "^1.11.1",

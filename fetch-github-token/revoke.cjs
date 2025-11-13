@@ -1,6 +1,6 @@
 const core = require('@actions/core');
 
-async function run() {
+async function revokeToken() {
   try {
     const githubEphemeralToken = process.env.INPUT_EPHEMERALTOKEN
     if (!githubEphemeralToken) {
@@ -31,4 +31,8 @@ async function run() {
   }
 }
 
-run();
+module.exports = { revokeToken };
+
+if (require.main === module) {
+  revokeToken();
+}
