@@ -7,8 +7,6 @@ jest.mock('@actions/core', () => ({
   info: jest.fn(),
   warning: jest.fn()
 }));
-
-// Mock the revoke module
 let revokeModule;
 
 describe('Revoke GitHub Token', () => {
@@ -19,7 +17,6 @@ describe('Revoke GitHub Token', () => {
     process.env = { ...originalEnv };
     global.fetch = jest.fn();
 
-    // Clear module cache and re-import
     delete require.cache[require.resolve('../revoke.cjs')];
     revokeModule = require('../revoke.cjs');
   });
