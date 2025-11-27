@@ -10,11 +10,11 @@ Fetch an ephemeral GitHub token from Vault using OIDC authentication
 <!--/description-->
 ## Inputs
 <!--inputs-->
-| Name                | Description                                                                                                                        | Required | Default |
-|---------------------|------------------------------------------------------------------------------------------------------------------------------------|----------|---------|
-| `vault-instance`    | Vault instance to connect to (ci-prod or ci-dev)                                                                                   | `true`   | ` `     |
-| `vault-role`        | Vault role to assume for GitHub token retrieval. If not provided, it will be generated based on the workflow ref of the GH Action. | `false`  | ` `     |
-| `skip-token-revoke` | If true, skip revoking the GitHub token on exit                                                                                    | `false`  | `false` |
+| Name                | Description                                                                                                                                                                                                                                                | Required | Default |
+|---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|---------|
+| `vault-instance`    | Vault instance to connect to (ci-prod or ci-dev)                                                                                                                                                                                                           | `true`   | ` `     |
+| `vault-role`        | Vault role to assume for GitHub token retrieval. If not provided, it will be generated based on the workflow ref of the GH Action. IMPORTANT: This must be used when providing a wildcard in the filename on the workflow_ref of the TokenPolicy resource. | `false`  | ` `     |
+| `skip-token-revoke` | If true, skip revoking the GitHub token on exit                                                                                                                                                                                                            | `false`  | `false` |
 <!--/inputs-->
 ## Outputs
 <!--outputs-->

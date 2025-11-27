@@ -5,7 +5,7 @@ inputs:
     description: 'Vault instance to connect to (ci-prod or ci-dev)'
     required: true
   vault-role:
-    description: 'Vault role to assume for GitHub token retrieval. If not provided, it will be generated based on the workflow ref of the GH Action.'
+    description: 'Vault role to assume for GitHub token retrieval. If not provided, it will be generated based on the workflow ref of the GH Action. IMPORTANT: This must be used when providing a wildcard in the filename on the workflow_ref of the TokenPolicy resource.'
     required: false
     default: ''
   skip-token-revoke:
