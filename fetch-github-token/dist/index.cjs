@@ -1,4 +1,4 @@
-/******/ (() => { // webpackBootstrap
+require('./sourcemap-register.cjs');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
 /***/ 4914:
@@ -572,8 +572,8 @@ class OidcClient {
             const res = yield httpclient
                 .getJson(id_token_url)
                 .catch(error => {
-                throw new Error(`Failed to get ID Token. \n
-        Error Code : ${error.statusCode}\n
+                throw new Error(`Failed to get ID Token. \n 
+        Error Code : ${error.statusCode}\n 
         Error Message: ${error.message}`);
             });
             const id_token = (_a = res.result) === null || _a === void 0 ? void 0 : _a.value;
@@ -27554,6 +27554,7 @@ module.exports = { revokeToken };
 if (__nccwpck_require__.c[__nccwpck_require__.s] === module) {
   revokeToken();
 }
+// test
 
 
 /***/ })
@@ -27562,7 +27563,7 @@ if (__nccwpck_require__.c[__nccwpck_require__.s] === module) {
 /************************************************************************/
 /******/ 	// The module cache
 /******/ 	var __webpack_module_cache__ = {};
-/******/
+/******/ 	
 /******/ 	// The require function
 /******/ 	function __nccwpck_require__(moduleId) {
 /******/ 		// Check if module is in cache
@@ -27576,7 +27577,7 @@ if (__nccwpck_require__.c[__nccwpck_require__.s] === module) {
 /******/ 			loaded: false,
 /******/ 			exports: {}
 /******/ 		};
-/******/
+/******/ 	
 /******/ 		// Execute the module function
 /******/ 		var threw = true;
 /******/ 		try {
@@ -27585,17 +27586,17 @@ if (__nccwpck_require__.c[__nccwpck_require__.s] === module) {
 /******/ 		} finally {
 /******/ 			if(threw) delete __webpack_module_cache__[moduleId];
 /******/ 		}
-/******/
+/******/ 	
 /******/ 		// Flag the module as loaded
 /******/ 		module.loaded = true;
-/******/
+/******/ 	
 /******/ 		// Return the exports of the module
 /******/ 		return module.exports;
 /******/ 	}
-/******/
+/******/ 	
 /******/ 	// expose the module cache
 /******/ 	__nccwpck_require__.c = __webpack_module_cache__;
-/******/
+/******/ 	
 /************************************************************************/
 /******/ 	/* webpack/runtime/node module decorator */
 /******/ 	(() => {
@@ -27605,18 +27606,19 @@ if (__nccwpck_require__.c[__nccwpck_require__.s] === module) {
 /******/ 			return module;
 /******/ 		};
 /******/ 	})();
-/******/
+/******/ 	
 /******/ 	/* webpack/runtime/compat */
-/******/
+/******/ 	
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
-/******/
+/******/ 	
 /************************************************************************/
-/******/
+/******/ 	
 /******/ 	// module cache are used so entry inlining is disabled
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	var __webpack_exports__ = __nccwpck_require__(__nccwpck_require__.s = 2499);
 /******/ 	module.exports = __webpack_exports__;
-/******/
+/******/ 	
 /******/ })()
 ;
+//# sourceMappingURL=index.cjs.js.map

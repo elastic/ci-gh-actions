@@ -22,3 +22,12 @@ repos:
     rev: 0c610de366faf857ef4b33704ee28edcf85778cc
     hooks:
       - id: actionlint
+
+  - repo: local
+    hooks:
+      - id: build-and-stage-github-actions
+        name: Build and stage GitHub Actions
+        entry: bash -c 'cd fetch-github-token && npm install --silent && npx ncc build revoke.cjs -o dist --source-map && git add dist/'
+        language: system
+        files: ^fetch-github-token/(revoke\.cjs|package\.json|action\.yml)$
+        pass_filenames: false
