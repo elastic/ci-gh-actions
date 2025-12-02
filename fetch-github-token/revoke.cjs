@@ -9,23 +9,19 @@ async function revokeToken() {
     }
 
     const githubRevokeUrl = `https://api.github.com/installation/token`;
-    try {
-        const response = await fetch(githubRevokeUrl, {
-            method: 'DELETE',
-            headers: {
-                Authorization: `Bearer ${githubEphemeralToken}`,
-                Accept: 'application/vnd.github+json'
-            }
-        });
-        if (!response.ok) {
-            const errorData = await response.json();
-            core.warning(`Failed to revoke GitHub token: ${JSON.stringify(errorData)}`);
-            return;
+    const response = await fetch(githubRevokeUrl, {
+        method: 'DELETE',
+        headers: {
+            Authorization: `Bearer ${githubEphemeralToken}`,
+            Accept: 'application/vnd.github+json'
         }
-        core.info('Successfully revoked GitHub ephemeral token.');
-    } catch (err) {
-        core.warning(`Failed to revoke GitHub token: ${err.message}`);
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        core.warning(`Failed to revoke GitHub token: ${JSON.stringify(errorData)}`);
+        return;
     }
+    core.info('Successfully revoked GitHub ephemeral token.');
   } catch (err) {
     core.warning(`Post action error: ${err.message}`);
   }
