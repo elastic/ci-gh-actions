@@ -4,9 +4,9 @@
   "description": "GitHub Action to fetch ephemeral GitHub token from Vault using OIDC authentication",
   "main": "dist/index.cjs",
   "scripts": {
-    "build": "ncc build revoke.cjs -o dist",
+    "build": "npx @vercel/ncc build revoke.cjs -o dist",
     "test": "node --experimental-vm-modules node_modules/.bin/jest",
-    "verify-bundle": "ncc build revoke.cjs -o dist-verify && diff -r dist dist-verify && rm -rf dist-verify"
+    "verify-bundle": "npx @vercel/ncc build revoke.cjs -o dist-verify && diff -b -B dist dist-verify && rm -rf dist-verify"
   },
   "dependencies": {
     "@actions/core": "^1.11.1",

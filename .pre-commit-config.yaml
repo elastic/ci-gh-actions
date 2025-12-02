@@ -27,7 +27,15 @@ repos:
     hooks:
       - id: build-and-stage-github-actions
         name: Build and stage GitHub Actions
-        entry: bash -c 'cd fetch-github-token && npm install --silent && npx ncc build revoke.cjs -o dist && git add dist/'
+        entry: bash -c 'cd fetch-github-token && npm install --silent && npm run build && git add -u dist/'
+        language: system
+        files: ^fetch-github-token/(revoke\.cjs|package\.json|action\.yml)$
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: verify-github-actions-bundle
+        name: Verify GitHub Actions bundle is up-to-date
+        entry: bash -c 'cd fetch-github-token && npm install --silent && npm run verify-bundle'
         language: system
         files: ^fetch-github-token/(revoke\.cjs|package\.json|action\.yml)$
         pass_filenames: false
