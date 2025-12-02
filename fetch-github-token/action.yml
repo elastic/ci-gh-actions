@@ -93,5 +93,5 @@ runs:
       uses: elastic/ci-gh-actions/with-post-step@new-js-action
       with:
         main: echo "Token retrieved successfully"
-        post: node ${{ github.action_path }}/../fetch-github-token/dist/revoke.cjs
+        post: node ${{ github.action_path }}/../fetch-github-token/dist/index.cjs
         ephemeralToken: ${{ steps.vault-action.outputs.token }}

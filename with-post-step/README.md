@@ -24,6 +24,6 @@ steps:
   - uses: elastic/ci-gh-actions/with-post-step@v1.1
     with:
       main: echo "Token retrieved successfully"
-      post: node ${{ github.action_path }}/../fetch-github-token/dist/revoke.cjs
+      post: node ${{ github.action_path }}/../fetch-github-token/dist/index.cjs
 ```
 <!--/usage-->

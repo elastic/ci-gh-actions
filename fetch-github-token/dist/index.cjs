@@ -27514,6 +27514,48 @@ function parseParams (str) {
 module.exports = parseParams
 
 
+/***/ }),
+
+/***/ 2499:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+/* module decorator */ module = __nccwpck_require__.nmd(module);
+const core = __nccwpck_require__(7484);
+
+async function revokeToken() {
+  try {
+    const githubEphemeralToken = process.env.INPUT_EPHEMERALTOKEN
+    if (!githubEphemeralToken) {
+      core.info('No GitHub ephemeral token found in inputs, skipping revoke.');
+      return;
+    }
+
+    const githubRevokeUrl = `https://api.github.com/installation/token`;
+    const response = await fetch(githubRevokeUrl, {
+        method: 'DELETE',
+        headers: {
+            Authorization: `Bearer ${githubEphemeralToken}`,
+            Accept: 'application/vnd.github+json'
+        }
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        core.warning(`Failed to revoke GitHub token: ${JSON.stringify(errorData)}`);
+        return;
+    }
+    core.info('Successfully revoked GitHub ephemeral token.');
+  } catch (err) {
+    core.warning(`Post action error: ${err.message}`);
+  }
+}
+
+module.exports = { revokeToken };
+
+if (__nccwpck_require__.c[__nccwpck_require__.s] === module) {
+  revokeToken();
+}
+
+
 /***/ })
 
 /******/ 	});
@@ -27530,8 +27572,8 @@ module.exports = parseParams
 /******/ 		}
 /******/ 		// Create a new module (and put it into the cache)
 /******/ 		var module = __webpack_module_cache__[moduleId] = {
-/******/ 			// no module.id needed
-/******/ 			// no module.loaded needed
+/******/ 			id: moduleId,
+/******/ 			loaded: false,
 /******/ 			exports: {}
 /******/ 		};
 /******/
@@ -27544,52 +27586,37 @@ module.exports = parseParams
 /******/ 			if(threw) delete __webpack_module_cache__[moduleId];
 /******/ 		}
 /******/
+/******/ 		// Flag the module as loaded
+/******/ 		module.loaded = true;
+/******/
 /******/ 		// Return the exports of the module
 /******/ 		return module.exports;
 /******/ 	}
 /******/
+/******/ 	// expose the module cache
+/******/ 	__nccwpck_require__.c = __webpack_module_cache__;
+/******/
 /************************************************************************/
+/******/ 	/* webpack/runtime/node module decorator */
+/******/ 	(() => {
+/******/ 		__nccwpck_require__.nmd = (module) => {
+/******/ 			module.paths = [];
+/******/ 			if (!module.children) module.children = [];
+/******/ 			return module;
+/******/ 		};
+/******/ 	})();
+/******/
 /******/ 	/* webpack/runtime/compat */
 /******/
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
 /******/
 /************************************************************************/
-var __webpack_exports__ = {};
-const core = __nccwpck_require__(7484);
-
-async function run() {
-  try {
-    const githubEphemeralToken = process.env.INPUT_EPHEMERALTOKEN
-    if (!githubEphemeralToken) {
-      core.info('No GitHub ephemeral token found in inputs, skipping revoke.');
-      return;
-    }
-
-    const githubRevokeUrl = `https://api.github.com/installation/token`;
-    try {
-        const response = await fetch(githubRevokeUrl, {
-            method: 'DELETE',
-            headers: {
-                Authorization: `Bearer ${githubEphemeralToken}`,
-                Accept: 'application/vnd.github+json'
-            }
-        });
-        if (!response.ok) {
-            const errorData = await response.json();
-            core.warning(`Failed to revoke GitHub token: ${JSON.stringify(errorData)}`);
-            return;
-        }
-        core.info('Successfully revoked GitHub ephemeral token.');
-    } catch (err) {
-        core.warning(`Failed to revoke GitHub token: ${err.message}`);
-    }
-  } catch (err) {
-    core.warning(`Post action error: ${err.message}`);
-  }
-}
-
-run();
-
-module.exports = __webpack_exports__;
+/******/
+/******/ 	// module cache are used so entry inlining is disabled
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	var __webpack_exports__ = __nccwpck_require__(__nccwpck_require__.s = 2499);
+/******/ 	module.exports = __webpack_exports__;
+/******/
 /******/ })()
 ;

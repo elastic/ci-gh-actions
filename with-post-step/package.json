@@ -1,0 +1,16 @@
+{
+  "name": "with-post-step",
+  "version": "1.0.0",
+  "description": "GitHub Action to fetch ephemeral GitHub token from Vault using OIDC authentication",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "ncc build main.js -o dist",
+    "prepare": "husky",
+    "verify-bundle": "ncc build main.js -o dist-verify && diff -r dist dist-verify && rm -rf dist-verify"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@vercel/ncc": "^0.38.4",
+    "husky": "^9.1.7"
+  }
+}
