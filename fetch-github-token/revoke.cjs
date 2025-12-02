@@ -32,3 +32,4 @@ module.exports = { revokeToken };
 if (require.main === module) {
   revokeToken();
 }
+// test
