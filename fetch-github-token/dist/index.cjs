@@ -1,4 +1,4 @@
-require('./sourcemap-register.cjs');/******/ (() => { // webpackBootstrap
+/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
 /***/ 4914:
@@ -27555,6 +27555,7 @@ if (__nccwpck_require__.c[__nccwpck_require__.s] === module) {
   revokeToken();
 }
 // test
+// test
 
 
 /***/ })
@@ -27621,4 +27622,3 @@ if (__nccwpck_require__.c[__nccwpck_require__.s] === module) {
 /******/ 	
 /******/ })()
 ;
-//# sourceMappingURL=index.cjs.js.map
