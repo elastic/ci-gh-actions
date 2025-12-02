@@ -8,23 +8,22 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        projects: ["fetch-github-token"]
     steps:
       - uses: actions/checkout@v6
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
           node-version: '24'
-      - name: Find and test all packages
+
+      - name: Test ${{ matrix.projects }}
         run: |
-          find . -type f -name package.json -not -path "*/dist/*" -print0 | while IFS= read -r -d '' file; do
-            dir=$(dirname "$file")
-            echo "Testing in $dir"
-            cd "$dir" || continue
-            if [ -f package.json ] && grep -q '"test"' package.json; then
-              npm install
-              npm test
-            else
-              echo "No test script found in $dir, skipping..."
-            fi
-            cd - > /dev/null || exit 1
-          done
+          cd ${{ matrix.projects }}
+          if [ -f package.json ] && grep -q '"test"' package.json; then
+            npm install
+            npm test
+          else
+            echo "No test script found in ${{ matrix.projects }}, skipping..."
+          fi
