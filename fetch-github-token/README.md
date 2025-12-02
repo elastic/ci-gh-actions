@@ -38,3 +38,23 @@ steps:
       github-token: ${{ steps.fetch-token.outputs.token }}
 ```
 <!--/usage-->
+
+## Development
+
+### Building
+
+Build the action for distribution:
+
+```bash
+npm run build
+```
+
+### Pre-commit Hook
+
+A pre-commit hook automatically rebuilds the action. Set up with:
+
+```bash
+npm install
+```
+
+The `prepare` script runs automatically and sets up Husky hooks.
