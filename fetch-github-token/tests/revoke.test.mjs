@@ -82,7 +82,7 @@ describe('Revoke GitHub Token', () => {
       await revokeModule.revokeToken();
 
       const core = require('@actions/core');
-      expect(core.warning).toHaveBeenCalledWith('Failed to revoke GitHub token: Network error');
+      expect(core.warning).toHaveBeenCalledWith('Post action error: Network error');
     });
   });
 });
