@@ -20,10 +20,6 @@ jobs:
 
       - name: Test ${{ matrix.projects }}
         run: |
-          cd ${{ matrix.projects }}
-          if [ -f package.json ] && grep -q '"test"' package.json; then
-            npm install
-            npm test
-          else
-            echo "No test script found in ${{ matrix.projects }}, skipping..."
-          fi
+          npm install
+          npm test
+        working-directory: "${{ matrix.projects }}"
