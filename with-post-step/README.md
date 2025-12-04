@@ -1,4 +1,6 @@
 # <!--name-->With post step<!--/name-->
+[![usages](https://img.shields.io/badge/usages-white?logo=githubactions&logoColor=blue)](https://github.com/search?q=elastic%2Fci-gh-actions%2Fwith-post-step+%28path%3A.github%2Fworkflows+OR+path%3A**%2Faction.yml+OR+path%3A**%2Faction.yaml%29&type=code)
+
 <!--description-->
 Generic JS Action to execute a main command and set a command as a post step.
 <!--/description-->
