@@ -28,7 +28,7 @@ repos:
     hooks:
       - id: build-and-stage-github-actions
         name: Build and stage GitHub Actions
-        entry: bash -c 'cd fetch-github-token && npm install --silent && npm run build && git add -u dist/'
+        entry: bash -c 'cd fetch-github-token && npm install --silent && npm run build && git add -u dist/ package-lock.json'
         language: system
         files: ^fetch-github-token/(revoke\.cjs|package\.json|action\.yml)$
         pass_filenames: false
