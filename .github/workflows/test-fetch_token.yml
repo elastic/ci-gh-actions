@@ -19,3 +19,4 @@ jobs:
       - uses: ./fetch-github-token
         with:
           vault-instance: "ci-prod"
+          skip-token-revoke: "true"
