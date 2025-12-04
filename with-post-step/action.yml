@@ -14,11 +14,11 @@ inputs:
     description: 'Name of the state variable used to detect the post step.'
     required: false
     default: POST
-  ephemeralToken:
+  ephemeral-token:
     description: 'Ephemeral GitHub Token to be revoked on the post step.'
     required: false
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
   post: 'dist/index.js'

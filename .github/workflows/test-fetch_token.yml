@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - './fetch-github-token/**'
-      - '.github/workflows/test-fetch_token.yaml'
+      - '.github/workflows/test-fetch_token.yml'
 
 jobs:
   test:

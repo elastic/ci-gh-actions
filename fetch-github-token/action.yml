@@ -94,4 +94,4 @@ runs:
     #   with:
     #     main: echo "Token retrieved successfully"
     #     post: node ${{ github.action_path }}/../fetch-github-token/dist/index.cjs
-    #     ephemeralToken: ${{ steps.vault-action.outputs.token }}
+    #     ephemeral-token: ${{ steps.vault-action.outputs.token }}
