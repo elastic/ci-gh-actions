@@ -27524,7 +27524,7 @@ const core = __nccwpck_require__(7484);
 
 async function revokeToken() {
   try {
-    const githubEphemeralToken = process.env.INPUT_EPHEMERALTOKEN
+    const githubEphemeralToken = process.env.INPUT_EPHEMERAL_TOKEN
     if (!githubEphemeralToken) {
       core.info('No GitHub ephemeral token found in inputs, skipping revoke.');
       return;
