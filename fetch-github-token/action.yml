@@ -90,7 +90,7 @@ runs:
 
     - name: Revoke GitHub Token on Exit
       if: ${{ inputs.skip-token-revoke != 'true' }}
-      uses: elastic/ci-gh-actions/with-post-step@v1.1.0
+      uses: elastic/ci-gh-actions/with-post-step@v1
       with:
         main: echo "Token retrieved successfully"
         post: node ${{ github.action_path }}/../fetch-github-token/dist/index.cjs
