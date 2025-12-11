@@ -56,5 +56,3 @@ A pre-commit hook automatically rebuilds the action. Set up with:
 ```bash
 npm install
 ```
-
-The `prepare` script runs automatically and sets up Husky hooks.
