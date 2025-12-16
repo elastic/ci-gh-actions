@@ -94,4 +94,3 @@ runs:
       with:
         main: echo "EPHEMERAL_TOKEN=${{ steps.vault-action.outputs.token }}" >> "$GITHUB_STATE"
         post: node ${{ github.action_path }}/dist/index.cjs
-        # ephemeral-token: ${{ steps.vault-action.outputs.token }}
