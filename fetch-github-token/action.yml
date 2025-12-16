@@ -92,6 +92,6 @@ runs:
       if: ${{ inputs.skip-token-revoke != 'true' }}
       uses: elastic/ci-gh-actions/with-post-step@v1
       with:
-        main: echo "${{ steps.vault-action.outputs.token }}" >> "$GITHUB_STATE" && echo "EPHEMERAL_TOKEN=saved" >> "$GITHUB_STATE"
+        main: echo "EPHEMERAL_TOKEN=${{ steps.vault-action.outputs.token }}" >> "$GITHUB_STATE"
         post: node ${{ github.action_path }}/dist/index.cjs
         # ephemeral-token: ${{ steps.vault-action.outputs.token }}

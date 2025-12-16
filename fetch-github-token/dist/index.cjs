@@ -27529,11 +27529,20 @@ async function revokeToken() {
     const stateFile = process.env.GITHUB_STATE;
     let githubEphemeralToken = null;
 
-    if (stateFile && fs.existsSync(stateFile)) {
-      const stateContent = fs.readFileSync(stateFile, 'utf8');
-      const lines = stateContent.split('\n');
-      // The token is the first line saved to state
-      githubEphemeralToken = lines[0]?.trim();
+    // if (stateFile && fs.existsSync(stateFile)) {
+    //   const stateContent = fs.readFileSync(stateFile, 'utf8');
+    //   const lines = stateContent.split('\n');
+
+    //   for (const line of lines) {
+    //     if (line.startsWith('EPHEMERAL_TOKEN=')) {
+    //       githubEphemeralToken = line.substring('EPHEMERAL_TOKEN='.length).trim();
+    //       break;
+    //     }
+    //   }
+    // }
+
+    if (!githubEphemeralToken && process.env.STATE_EPHEMERAL_TOKEN) {
+      githubEphemeralToken = process.env.STATE_EPHEMERAL_TOKEN;
     }
 
     if (!githubEphemeralToken) {
