@@ -27521,10 +27521,21 @@ module.exports = parseParams
 
 /* module decorator */ module = __nccwpck_require__.nmd(module);
 const core = __nccwpck_require__(7484);
+const fs = __nccwpck_require__(9896);
 
 async function revokeToken() {
   try {
-    const githubEphemeralToken = process.env.INPUT_EPHEMERAL_TOKEN
+    // Read token from GitHub State
+    const stateFile = process.env.GITHUB_STATE;
+    let githubEphemeralToken = null;
+
+    if (stateFile && fs.existsSync(stateFile)) {
+      const stateContent = fs.readFileSync(stateFile, 'utf8');
+      const lines = stateContent.split('\n');
+      // The token is the first line saved to state
+      githubEphemeralToken = lines[0]?.trim();
+    }
+
     if (!githubEphemeralToken) {
       core.info('No GitHub ephemeral token found in inputs, skipping revoke.');
       return;
