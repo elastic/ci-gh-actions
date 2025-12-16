@@ -27,7 +27,7 @@ describe('Revoke GitHub Token', () => {
 
   describe('revoke token functionality', () => {
     it('successfully revokes GitHub token', async () => {
-      process.env.INPUT_EPHEMERAL_TOKEN = 'test-token';
+      process.env.STATE_EPHEMERAL_TOKEN = 'test-token';
 
       global.fetch.mockResolvedValue({
         ok: true,
@@ -51,7 +51,7 @@ describe('Revoke GitHub Token', () => {
     });
 
     it('skips revoke when no token provided', async () => {
-      delete process.env.INPUT_EPHEMERAL_TOKEN;
+      delete process.env.STATE_EPHEMERAL_TOKEN;
 
       await revokeModule.revokeToken();
 
@@ -61,7 +61,7 @@ describe('Revoke GitHub Token', () => {
     });
 
     it('handles API error gracefully', async () => {
-      process.env.INPUT_EPHEMERAL_TOKEN = 'test-token';
+      process.env.STATE_EPHEMERAL_TOKEN = 'test-token';
 
       global.fetch.mockResolvedValue({
         ok: false,
@@ -75,7 +75,7 @@ describe('Revoke GitHub Token', () => {
     });
 
     it('handles network error gracefully', async () => {
-      process.env.INPUT_EPHEMERAL_TOKEN = 'test-token';
+      process.env.STATE_EPHEMERAL_TOKEN = 'test-token';
 
       global.fetch.mockRejectedValue(new Error('Network error'));
 
