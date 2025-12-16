@@ -92,6 +92,6 @@ runs:
       if: ${{ inputs.skip-token-revoke != 'true' }}
       uses: elastic/ci-gh-actions/with-post-step@v1
       with:
-        main: echo "Preparing to revoke GitHub token..."
+        main: node ${{ github.action_path }}/dist/index.cjs
         post: node ${{ github.action_path }}/dist/index.cjs
         ephemeral-token: ${{ steps.vault-action.outputs.token }}
