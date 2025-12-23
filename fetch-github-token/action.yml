@@ -67,20 +67,23 @@ runs:
         echo "Vault Secrets Path Expected: github/token/$VAULT_ROLE"
         echo "-------------------------------------"
 
-    - name: Use Vault Action to login and retrieve Ephemeral GitHub Token
+    - name: Use Vault Action to login and retrieve Ephemeral GitHub Token (with retry)
       id: vault-action
       env:
         VAULT_ROLE: ${{ inputs.vault-role == '' && steps.vault-role.outputs.role || inputs.vault-role }}
-      uses: hashicorp/vault-action@4c06c5ccf5c0761b6029f56cfb1dcf5565918a3b # v3.4.0
+      uses: nick-invision/retry@v3
       with:
-        url: ${{ steps.vault-address.outputs.url }}
-        role: ${{ env.VAULT_ROLE }}
-        path: github-oidc
-        method: jwt
-        jwtGithubAudience: vault
-        exportEnv: false
-        secrets: |
-          github/token/${{ env.VAULT_ROLE }} token
+        timeout_minutes: 2
+        max_attempts: 5
+        command: |
+          gh workflow run hashicorp/vault-action@4c06c5ccf5c0761b6029f56cfb1dcf5565918a3b \
+            --url ${{ steps.vault-address.outputs.url }} \
+            --role ${{ env.VAULT_ROLE }} \
+            --path github-oidc \
+            --method jwt \
+            --jwtGithubAudience vault \
+            --exportEnv false \
+            --secrets "github/token/${{ env.VAULT_ROLE }} token"
 
     - name: Token status check
       shell: bash
