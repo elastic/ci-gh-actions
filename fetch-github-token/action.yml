@@ -77,7 +77,7 @@ runs:
     - name: Install Vault CLI
       shell: bash
       run: |
-        VAULT_VERSION="1.15.5"
+        VAULT_VERSION="1.20.6"
         curl -fsSL "https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip" -o vault.zip
         unzip vault.zip
         sudo install vault /usr/local/bin/
