@@ -71,7 +71,7 @@ runs:
       id: vault-action
       env:
         VAULT_ROLE: ${{ inputs.vault-role == '' && steps.vault-role.outputs.role || inputs.vault-role }}
-      uses: nick-invision/retry@v3
+      uses: nick-fields/retry@v3
       with:
         timeout_minutes: 2
         max_attempts: 5
