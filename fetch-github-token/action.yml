@@ -72,7 +72,7 @@ runs:
       uses: actions/github-script@v7
       with:
         script: |
-          const id_token = await core.getIDToken();
+          const id_token = await core.getIDToken('vault');
           core.setOutput('id_token', id_token);
 
     - name: Install Vault CLI
@@ -93,12 +93,12 @@ runs:
         JWT_TOKEN: ${{ steps.oidc.outputs.id_token }}
       run: |
         for i in {1..5}; do
-          echo "VAULT_ADDR: $VAULT_ADDR"
           vault write auth/github-oidc/login role="$VAULT_ROLE" jwt="$JWT_TOKEN" && \
-          vault read -field=token "github/token/$VAULT_ROLE" && break
+          GITHUB_TOKEN=$(vault read -field=token "github/token/$VAULT_ROLE") && break
           echo "Retry $i failed, retrying in 5s..."
           sleep 5
         done
+        echo "token=$GITHUB_TOKEN" >> "$GITHUB_OUTPUT"
 
     - name: Token status check
       shell: bash
