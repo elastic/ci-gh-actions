@@ -93,7 +93,10 @@ runs:
         JWT_TOKEN: ${{ steps.oidc.outputs.id_token }}
       run: |
         for i in {1..5}; do
-          vault write auth/github-oidc/login role="$VAULT_ROLE" jwt="$JWT_TOKEN" && break
+          VAULT_TOKEN=$(vault write auth/github-oidc/login role="$VAULT_ROLE" jwt="$JWT_TOKEN") && \
+          export VAULT_TOKEN && \
+          GITHUB_TOKEN=$(vault read -field=token "github/token/$VAULT_ROLE") && \
+          break
           echo "Retry $i failed, retrying in 5s..."
           sleep 5
         done
