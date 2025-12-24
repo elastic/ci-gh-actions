@@ -67,13 +67,12 @@ runs:
         echo "Vault Secrets Path Expected: github/token/$VAULT_ROLE"
         echo "-------------------------------------"
 
-    - name: Get GitHub OIDC Token
+    - name: Request OIDC Token from GitHub
+      shell: bash
       id: oidc
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const id_token = await core.getIDToken('vault');
-          core.setOutput('id_token', id_token);
+      run: |
+        echo "OIDC_TOKEN=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+        "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=vault" | jq -r '.value')" >> $GITHUB_ENV
 
     - name: Install Vault CLI
       shell: bash
@@ -93,8 +92,11 @@ runs:
         JWT_TOKEN: ${{ steps.oidc.outputs.id_token }}
       run: |
         for i in {1..5}; do
-          VAULT_TOKEN=$(vault write auth/github-oidc/login role="$VAULT_ROLE" jwt="$JWT_TOKEN") && \
-          export VAULT_TOKEN && \
+          LOGIN_RESPONSE=$(curl -s --request POST \
+              --data '{"jwt": "'"$OIDC_TOKEN"'", "role": "$VAULT_ROLE"}' \
+              "$VAULT_ADDR/v1/auth/github-oidc/login")
+          echo "$LOGIN_RESPONSE"
+          VAULT_TOKEN=$(echo $LOGIN_RESPONSE | jq -r '.auth.client_token')" \
           GITHUB_TOKEN=$(vault read -field=token "github/token/$VAULT_ROLE") && \
           break
           echo "Retry $i failed, retrying in 5s..."
