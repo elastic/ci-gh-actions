@@ -93,12 +93,11 @@ runs:
       run: |
         for i in {1..5}; do
           LOGIN_RESPONSE=$(curl -s --request POST \
-              --data '{"jwt": "'"$OIDC_TOKEN"'", "role": "$VAULT_ROLE"}' \
-              "$VAULT_ADDR/v1/auth/github-oidc/login")
+            --data '{"jwt": "'"$OIDC_TOKEN"'", "role": "'"$VAULT_ROLE"'"}' \
+            "$VAULT_ADDR/v1/auth/github-oidc/login")
           echo "$LOGIN_RESPONSE"
-          VAULT_TOKEN=$(echo $LOGIN_RESPONSE | jq -r '.auth.client_token')" \
-          GITHUB_TOKEN=$(vault read -field=token "github/token/$VAULT_ROLE") && \
-          break
+          VAULT_TOKEN=$(echo $LOGIN_RESPONSE | jq -r '.auth.client_token')
+          GITHUB_TOKEN=$(vault read -field=token "github/token/$VAULT_ROLE") && break
           echo "Retry $i failed, retrying in 5s..."
           sleep 5
         done
