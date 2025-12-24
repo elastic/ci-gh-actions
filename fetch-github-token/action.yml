@@ -75,7 +75,17 @@ runs:
           const id_token = await core.getIDToken();
           core.setOutput('id_token', id_token);
 
+    - name: Install Vault CLI
+      shell: bash
+      run: |
+        VAULT_VERSION="1.15.5"
+        curl -fsSL "https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip" -o vault.zip
+        unzip vault.zip
+        sudo install vault /usr/local/bin/
+        vault --version
+
     - name: Fetch GitHub Token from Vault with Retry
+      id: vault-action
       shell: bash
       env:
         VAULT_ADDR: ${{ steps.vault-address.outputs.url }}
