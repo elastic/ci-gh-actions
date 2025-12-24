@@ -67,23 +67,27 @@ runs:
         echo "Vault Secrets Path Expected: github/token/$VAULT_ROLE"
         echo "-------------------------------------"
 
-    - name: Use Vault Action to login and retrieve Ephemeral GitHub Token (with retry)
-      id: vault-action
-      env:
-        VAULT_ROLE: ${{ inputs.vault-role == '' && steps.vault-role.outputs.role || inputs.vault-role }}
-      uses: nick-fields/retry@v3
+    - name: Get GitHub OIDC Token
+      id: oidc
+      uses: actions/github-script@v7
       with:
-        timeout_minutes: 2
-        max_attempts: 5
-        command: |
-          gh workflow run hashicorp/vault-action@4c06c5ccf5c0761b6029f56cfb1dcf5565918a3b \
-            --url ${{ steps.vault-address.outputs.url }} \
-            --role ${{ env.VAULT_ROLE }} \
-            --path github-oidc \
-            --method jwt \
-            --jwtGithubAudience vault \
-            --exportEnv false \
-            --secrets "github/token/${{ env.VAULT_ROLE }} token"
+        script: |
+          const id_token = await core.getIDToken();
+          core.setOutput('id_token', id_token);
+
+    - name: Fetch GitHub Token from Vault with Retry
+      shell: bash
+      env:
+        VAULT_ADDR: ${{ steps.vault-address.outputs.url }}
+        VAULT_ROLE: ${{ inputs.vault-role == '' && steps.vault-role.outputs.role || inputs.vault-role }}
+        JWT_TOKEN: ${{ steps.oidc.outputs.id_token }}
+      run: |
+        for i in {1..5}; do
+          vault login -method=jwt role="$VAULT_ROLE" jwt="$JWT_TOKEN" && \
+          vault read -field=token "github/token/$VAULT_ROLE" && break
+          echo "Retry $i failed, retrying in 5s..."
+          sleep 5
+        done
 
     - name: Token status check
       shell: bash
