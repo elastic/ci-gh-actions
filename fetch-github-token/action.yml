@@ -98,7 +98,8 @@ runs:
           VAULT_TOKEN=$(echo $LOGIN_RESPONSE | jq -r '.auth.client_token')
           export VAULT_TOKEN
           GITHUB_TOKEN=$(vault read -field=token "github/token/$VAULT_ROLE") && break
-          echo "Retry $i failed, retrying in 5s..."
+          echo "Retry $i/5 failed, retrying in 5s..."
+          # if the login or read failed, wait before retrying (max 25s total wait)
           sleep 5
         done
         echo "token=$GITHUB_TOKEN" >> "$GITHUB_OUTPUT"
