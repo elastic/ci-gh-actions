@@ -67,20 +67,42 @@ runs:
         echo "Vault Secrets Path Expected: github/token/$VAULT_ROLE"
         echo "-------------------------------------"
 
-    - name: Use Vault Action to login and retrieve Ephemeral GitHub Token
+    - name: Request OIDC Token from GitHub
+      shell: bash
+      id: oidc
+      run: |
+        echo "OIDC_TOKEN=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+        "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=vault" | jq -r '.value')" >> $GITHUB_ENV
+
+    - name: Install Vault CLI
+      shell: bash
+      run: |
+        VAULT_VERSION="1.20.4"
+        curl -fsSL "https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip" -o vault.zip
+        unzip vault.zip
+        sudo install vault /usr/local/bin/
+        vault --version
+
+    - name: Fetch GitHub Token from Vault with Retry
       id: vault-action
+      shell: bash
       env:
+        VAULT_ADDR: ${{ steps.vault-address.outputs.url }}
         VAULT_ROLE: ${{ inputs.vault-role == '' && steps.vault-role.outputs.role || inputs.vault-role }}
-      uses: hashicorp/vault-action@4c06c5ccf5c0761b6029f56cfb1dcf5565918a3b # v3.4.0
-      with:
-        url: ${{ steps.vault-address.outputs.url }}
-        role: ${{ env.VAULT_ROLE }}
-        path: github-oidc
-        method: jwt
-        jwtGithubAudience: vault
-        exportEnv: false
-        secrets: |
-          github/token/${{ env.VAULT_ROLE }} token
+        JWT_TOKEN: ${{ steps.oidc.outputs.id_token }}
+      run: |
+        for i in {1..5}; do
+          LOGIN_RESPONSE=$(curl -s --request POST \
+            --data '{"jwt": "'"$OIDC_TOKEN"'", "role": "'"$VAULT_ROLE"'"}' \
+            "$VAULT_ADDR/v1/auth/github-oidc/login")
+          VAULT_TOKEN=$(echo $LOGIN_RESPONSE | jq -r '.auth.client_token')
+          export VAULT_TOKEN
+          GITHUB_TOKEN=$(vault read -field=token "github/token/$VAULT_ROLE") && break
+          echo "Retry $i/5 failed, retrying in 5s..."
+          # if the login or read failed, wait before retrying (max 25s total wait)
+          sleep 5
+        done
+        echo "token=$GITHUB_TOKEN" >> "$GITHUB_OUTPUT"
 
     - name: Token status check
       shell: bash
