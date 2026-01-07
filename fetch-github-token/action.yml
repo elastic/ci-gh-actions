@@ -1,17 +1,17 @@
 name: Get Ephemeral GitHub Token from CI Vault
 description: 'Fetch an ephemeral GitHub token from Vault using OIDC authentication'
-
 inputs:
   vault-instance:
     description: 'Vault instance to connect to (ci-prod or ci-dev)'
     required: true
   vault-role:
-    description: 'Vault role to assume for GitHub token retrieval'
+    description: 'Vault role to assume for GitHub token retrieval. If not provided, it will be generated based on the workflow ref of the GH Action. IMPORTANT: This must be used when providing a wildcard in the filename on the workflow_ref of the TokenPolicy resource.'
     required: false
     default: ''
-  # skip-token-revoke:
-  #   description: 'Revoke the Vault token on exit'
-  #   default: false
+  skip-token-revoke:
+    description: 'If true, skip revoking the GitHub token on exit'
+    required: false
+    default: 'false'
 outputs:
   token:
     description: GitHub App installation access token.
@@ -109,3 +109,10 @@ runs:
       run: gh auth status
       env:
         GH_TOKEN: ${{ steps.vault-action.outputs.token }}
+
+    - name: Revoke GitHub Token on Exit
+      if: ${{ inputs.skip-token-revoke != 'true' }}
+      uses: elastic/ci-gh-actions/with-post-step@v1
+      with:
+        main: echo "EPHEMERAL_TOKEN=${{ steps.vault-action.outputs.token }}" >> "$GITHUB_STATE"
+        post: node ${{ github.action_path }}/dist/index.cjs

@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths:
-      - './*/action.yml'
-      - '.github/workflows/test-fetch_token.yaml'
+      - './fetch-github-token/**'
+      - '.github/workflows/test-fetch_token.yml'
 
 jobs:
   test:

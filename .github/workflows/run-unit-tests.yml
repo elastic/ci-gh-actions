@@ -1,0 +1,25 @@
+name: Run Unit Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        projects: ["fetch-github-token"]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Test ${{ matrix.projects }}
+        run: |
+          npm install
+          npm test
+        working-directory: "${{ matrix.projects }}"
