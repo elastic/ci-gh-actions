@@ -98,11 +98,9 @@ runs:
         case "$OS" in
           linux)
             VAULT_OS="linux"
-            INSTALL_CMD="sudo install vault /usr/local/bin/"
             ;;
           darwin)
             VAULT_OS="darwin"
-            INSTALL_CMD="install vault /usr/local/bin/"
             ;;
           *)
             echo "::error title=Unsupported OS::Operating system $OS is not supported"
@@ -111,9 +109,13 @@ runs:
         esac
 
         echo "Detected OS: $OS, Architecture: $ARCH, using Vault binary for: ${VAULT_OS}_${VAULT_ARCH}"
-        curl -fsSL "https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_${VAULT_OS}_${VAULT_ARCH}.zip" -o vault.zip
-        unzip vault.zip
-        $INSTALL_CMD
+        VAULT_PATH=$RUNNER_TEMP/vault
+        mkdir $VAULT_PATH
+        curl -fsSL "https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_${VAULT_OS}_${VAULT_ARCH}.zip" -o $VAULT_PATH/vault.zip
+        cd $VAULT_PATH
+        unzip vault.zip && rm vault.zip
+        chmod +x vault
+        echo "$VAULT_PATH" >> "$GITHUB_PATH"
         vault --version
 
     - name: Fetch GitHub Token from Vault with Retry
