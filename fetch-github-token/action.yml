@@ -98,7 +98,7 @@ runs:
         case "$OS" in
           linux)
             VAULT_OS="linux"
-            INSTALL_CMD="install vault /usr/local/bin/"
+            INSTALL_CMD="sudo install vault /usr/local/bin/"
             ;;
           darwin)
             VAULT_OS="darwin"
