@@ -49,8 +49,12 @@ runs:
         echo "Workflow ref: $GITHUB_WORKFLOW_REF"
         WORKFLOW_REF_BASE="${GITHUB_WORKFLOW_REF%@*}"
         echo "Workflow ref base for role generation: $WORKFLOW_REF_BASE"
-        # Generate role name using SHA-256 hash of workflow ref base
-        WORKFLOW_HASH=$(echo -n "$WORKFLOW_REF_BASE" | sha256sum | cut -c1-12)
+        # Generate role name using SHA-256 hash of workflow ref base, checks if sha256sum is available, if not, it uses shasum
+        if command -v sha256sum >/dev/null 2>&1; then
+          WORKFLOW_HASH=$(echo -n "$WORKFLOW_REF_BASE" | sha256sum | cut -c1-12)
+        else
+          WORKFLOW_HASH=$(echo -n "$WORKFLOW_REF_BASE" | shasum -a 256 | awk '{print $1}' | cut -c1-12)
+        fi
         VAULT_ROLE="token-policy-$WORKFLOW_HASH"
         echo "Generated role name: $VAULT_ROLE"
         echo "role=$VAULT_ROLE" >> "$GITHUB_OUTPUT"
@@ -75,12 +79,45 @@ runs:
 
     - name: Install Vault CLI
       shell: bash
+      # This matches the current CI Vault version
+      env:
+        VAULT_VERSION: "1.20.4"
       run: |
-        VAULT_VERSION="1.20.4"
-        curl -fsSL "https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip" -o vault.zip
-        unzip vault.zip
-        sudo install vault /usr/local/bin/
-        vault --version
+        OS=$(uname | tr '[:upper:]' '[:lower:]')
+        ARCH=$(uname -m)
+
+        # Map architecture names to HashiCorp's naming
+        case "$ARCH" in
+          x86_64) VAULT_ARCH="amd64" ;;
+          arm64|aarch64) VAULT_ARCH="arm64" ;;
+          *)
+            echo "::error title=Unsupported architecture::Architecture $ARCH is not supported"
+            exit 1
+            ;;
+        esac
+
+        # Map OS names to HashiCorp's naming
+        case "$OS" in
+          linux)
+            VAULT_OS="linux"
+            ;;
+          darwin)
+            VAULT_OS="darwin"
+            ;;
+          *)
+            echo "::error title=Unsupported OS::Operating system $OS is not supported"
+            exit 1
+            ;;
+        esac
+        echo "Detected OS: $OS, Architecture: $ARCH, using Vault binary for: ${VAULT_OS}_${VAULT_ARCH}"
+        VAULT_PATH=$RUNNER_TEMP/vault
+        mkdir -p "$VAULT_PATH"
+        curl -fsSL "https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_${VAULT_OS}_${VAULT_ARCH}.zip" -o $VAULT_PATH/vault.zip
+        cd "$VAULT_PATH"
+        unzip vault.zip && rm vault.zip
+        chmod +x vault
+        ./vault --version
+        echo "$VAULT_PATH" >> "$GITHUB_PATH"
 
     - name: Fetch GitHub Token from Vault with Retry
       id: vault-action
