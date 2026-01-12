@@ -80,6 +80,7 @@ runs:
 
     - name: Install Vault CLI
       shell: bash
+      # This matches the current CI Vault version
       env:
         VAULT_VERSION: "1.20.4"
       run: |
