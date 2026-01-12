@@ -80,24 +80,43 @@ runs:
 
     - name: Install Vault CLI
       shell: bash
+      env:
+        VAULT_VERSION: "1.20.4"
       run: |
-        VAULT_VERSION="1.20.4"
         OS=$(uname | tr '[:upper:]' '[:lower:]')
         ARCH=$(uname -m)
+
         # Map architecture names to HashiCorp's naming
         case "$ARCH" in
-          x86_64) ARCH="amd64" ;;
-          arm64|aarch64) ARCH="arm64" ;;
-          *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
+          x86_64) VAULT_ARCH="amd64" ;;
+          arm64|aarch64) VAULT_ARCH="arm64" ;;
+          *)
+            echo "::error title=Unsupported architecture::Architecture $ARCH is not supported"
+            exit 1
+            ;;
         esac
+
         # Map OS names to HashiCorp's naming
         case "$OS" in
-          linux|darwin) ;;
-          *) echo "Unsupported OS: $OS"; exit 1 ;;
+          linux)
+            VAULT_OS="linux"
+            ;;
+          darwin)
+            VAULT_OS="darwin"
+            ;;
+          *)
+            echo "::error title=Unsupported OS::Operating system $OS is not supported"
+            exit 1
+            ;;
         esac
-        curl -fsSL "https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_${OS}_${ARCH}.zip" -o vault.zip
-        unzip vault.zip
-        sudo install vault /usr/local/bin/
+        echo "Detected OS: $OS, Architecture: $ARCH, using Vault binary for: ${VAULT_OS}_${VAULT_ARCH}"
+        VAULT_PATH=$RUNNER_TEMP/vault
+        mkdir $VAULT_PATH
+        curl -fsSL "https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_${OS}_${ARCH}.zip" -o $VAULT_PATH/vault.zip
+        cd $VAULT_PATH
+        unzip vault.zip && rm vault.zip
+        chmod +x vault
+        echo "$VAULT_PATH" >> "$GITHUB_PATH"
         vault --version
 
     - name: Fetch GitHub Token from Vault with Retry
