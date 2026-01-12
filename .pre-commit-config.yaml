@@ -20,7 +20,7 @@ repos:
 
   - repo: https://github.com/rhysd/actionlint
     # Support https://github.com/rhysd/actionlint/pull/561
-    rev: 0c610de366faf857ef4b33704ee28edcf85778cc
+    rev: 0933c147c9d6587653d45fdcb4c497c57a65f9af
     hooks:
       - id: actionlint
 
