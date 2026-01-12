@@ -69,7 +69,6 @@ runs:
 
     - name: Request OIDC Token from GitHub
       shell: bash
-      id: oidc
       run: |
         echo "OIDC_TOKEN=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
         "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=vault" | jq -r '.value')" >> $GITHUB_ENV
@@ -89,7 +88,6 @@ runs:
       env:
         VAULT_ADDR: ${{ steps.vault-address.outputs.url }}
         VAULT_ROLE: ${{ inputs.vault-role == '' && steps.vault-role.outputs.role || inputs.vault-role }}
-        JWT_TOKEN: ${{ steps.oidc.outputs.id_token }}
       run: |
         for i in {1..5}; do
           LOGIN_RESPONSE=$(curl -s --request POST \
