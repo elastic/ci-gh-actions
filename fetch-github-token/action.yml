@@ -117,7 +117,7 @@ runs:
         unzip vault.zip && rm vault.zip
         chmod +x vault
         echo "$VAULT_PATH" >> "$GITHUB_PATH"
-        vault --version
+        ./vault --version
 
     - name: Fetch GitHub Token from Vault with Retry
       id: vault-action
