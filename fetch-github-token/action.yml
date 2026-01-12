@@ -112,7 +112,7 @@ runs:
         echo "Detected OS: $OS, Architecture: $ARCH, using Vault binary for: ${VAULT_OS}_${VAULT_ARCH}"
         VAULT_PATH=$RUNNER_TEMP/vault
         mkdir $VAULT_PATH
-        curl -fsSL "https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_${OS}_${ARCH}.zip" -o $VAULT_PATH/vault.zip
+        curl -fsSL "https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_${VAULT_OS}_${VAULT_ARCH}.zip" -o $VAULT_PATH/vault.zip
         cd $VAULT_PATH
         unzip vault.zip && rm vault.zip
         chmod +x vault
