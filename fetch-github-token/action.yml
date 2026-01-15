@@ -147,7 +147,7 @@ runs:
 
     - name: Revoke GitHub Token on Exit
       if: ${{ inputs.skip-token-revoke != 'true' }}
-      uses: elastic/ci-gh-actions/with-post-step@v1
+      uses: elastic/ci-gh-actions/with-post-step@0c071fddf8c03194cd513d2d33b79edc1457b944 # v1
       with:
         main: echo "EPHEMERAL_TOKEN=${{ steps.vault-action.outputs.token }}" >> "$GITHUB_STATE"
         post: node ${{ github.action_path }}/dist/index.cjs
