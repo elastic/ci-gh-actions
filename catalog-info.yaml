@@ -22,6 +22,8 @@ spec:
       description: Public repository for GitHub Actions to be used by workflows in other Elastic public repos
     spec:
       repository: elastic/ci-gh-actions
+      env:
+        USE_OIDC_AUTH: "true"
       pipeline_file: ".buildkite/pipeline.yml"
       teams:
         platform-dev-flow:
