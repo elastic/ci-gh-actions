@@ -23,8 +23,6 @@ spec:
     spec:
       repository: elastic/ci-gh-actions
       pipeline_file: ".buildkite/pipeline.yml"
-      env:
-        USE_OIDC_AUTH: "true"
       teams:
         platform-dev-flow:
           access_level: MANAGE_BUILD_AND_READ
