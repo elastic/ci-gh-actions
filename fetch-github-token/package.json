@@ -9,7 +9,7 @@
     "verify-bundle": "npx @vercel/ncc build revoke.cjs -o dist-verify && diff -b -B dist dist-verify && rm -rf dist-verify"
   },
   "dependencies": {
-    "@actions/core": "^1.11.1",
+    "@actions/core": "^3.0.0",
     "@octokit/core": "^7.0.6"
   },
   "engines": {
