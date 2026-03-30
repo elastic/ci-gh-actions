@@ -71,12 +71,6 @@ runs:
         echo "Vault Secrets Path Expected: github/token/$VAULT_ROLE"
         echo "-------------------------------------"
 
-    - name: Request OIDC Token from GitHub
-      shell: bash
-      run: |
-        echo "OIDC_TOKEN=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-        "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=vault" | jq -r '.value')" >> $GITHUB_ENV
-
     - name: Install Vault CLI
       shell: bash
       # This matches the current CI Vault version
@@ -119,25 +113,61 @@ runs:
         ./vault --version
         echo "$VAULT_PATH" >> "$GITHUB_PATH"
 
+    - name: Request OIDC Token from GitHub
+      shell: bash
+      run: |
+        set -euo pipefail
+        OIDC_TOKEN=$(curl -s --max-time 10 \
+          -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+          "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=vault" | jq -r '.value')
+        if [[ -z "$OIDC_TOKEN" || "$OIDC_TOKEN" == "null" ]]; then
+          echo "::error title=OIDC Token Failed::OIDC token request returned empty/null"
+          exit 1
+        fi
+        echo "OIDC_TOKEN=$OIDC_TOKEN" >> "$GITHUB_ENV"
+
     - name: Fetch GitHub Token from Vault with Retry
       id: vault-action
       shell: bash
       env:
         VAULT_ADDR: ${{ steps.vault-address.outputs.url }}
         VAULT_ROLE: ${{ inputs.vault-role == '' && steps.vault-role.outputs.role || inputs.vault-role }}
+        VAULT_CLIENT_TIMEOUT: "10"
       run: |
-        for i in {1..5}; do
-          LOGIN_RESPONSE=$(curl -s --request POST \
+        set -euo pipefail
+
+        MAX_RETRIES=5
+        for i in $(seq 1 $MAX_RETRIES); do
+          echo "::group::Attempt $i/$MAX_RETRIES"
+
+          LOGIN_RESPONSE=$(curl -s --max-time 15 --request POST \
             --data '{"jwt": "'"$OIDC_TOKEN"'", "role": "'"$VAULT_ROLE"'"}' \
             "$VAULT_ADDR/v1/auth/github-oidc/login")
-          VAULT_TOKEN=$(echo $LOGIN_RESPONSE | jq -r '.auth.client_token')
+
+          VAULT_TOKEN=$(echo "$LOGIN_RESPONSE" | jq -r '.auth.client_token')
           export VAULT_TOKEN
-          GITHUB_TOKEN=$(vault read -field=token "github/token/$VAULT_ROLE") && break
-          echo "Retry $i/5 failed, retrying in 5s..."
-          # if the login or read failed, wait before retrying (max 25s total wait)
-          sleep 5
+
+          if [[ -z "$VAULT_TOKEN" || "$VAULT_TOKEN" == "null" ]]; then
+            ERRORS=$(echo "$LOGIN_RESPONSE" | jq -r '.errors // empty')
+            echo "::warning::Vault login failed — token is empty/null. Errors: $ERRORS"
+            echo "::endgroup::"
+            sleep $(( 2 ** i + RANDOM % 3 ))
+            continue
+          fi
+
+          if GITHUB_TOKEN=$(vault read -field=token "github/token/$VAULT_ROLE"); then
+            echo "::endgroup::"
+            echo "token=$GITHUB_TOKEN" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "::warning::vault read failed on attempt $i"
+          echo "::endgroup::"
+          sleep $(( 2 ** i + RANDOM % 3 ))
         done
-        echo "token=$GITHUB_TOKEN" >> "$GITHUB_OUTPUT"
+
+        echo "::error title=Vault Token Fetch Failed::All $MAX_RETRIES retry attempts exhausted"
+        exit 1
 
     - name: Token status check
       shell: bash
