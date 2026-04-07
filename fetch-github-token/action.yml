@@ -152,7 +152,7 @@ runs:
             echo "::warning::Vault login failed — token is empty/null. Errors: $ERRORS"
             echo "::endgroup::"
             # Exponential backoff with jitter to avoid thundering herd on concurrent retries
-            [[ "$i" -lt "$MAX_RETRIES" ]] && sleep $(( 2 ** i + RANDOM % 3 ))
+            [[ "$i" -lt "$MAX_RETRIES" ]] && sleep $(( 3 + 2 ** i + RANDOM % 3 ))
             continue
           fi
 
@@ -165,7 +165,7 @@ runs:
           echo "::warning::vault read failed on attempt $i"
           echo "::endgroup::"
           # Exponential backoff with jitter to avoid thundering herd on concurrent retries
-          [[ "$i" -lt "$MAX_RETRIES" ]] && sleep $(( 2 ** i + RANDOM % 3 ))
+          [[ "$i" -lt "$MAX_RETRIES" ]] && sleep $(( 3 + 2 ** i + RANDOM % 3 ))
         done
 
         echo "::error title=Vault Token Fetch Failed::All $MAX_RETRIES retry attempts exhausted"
