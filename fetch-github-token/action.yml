@@ -192,7 +192,7 @@ runs:
       if: ${{ inputs.skip-token-revoke != 'true' && steps.vault-action.outputs.has-vault-lease != 'true' && steps.vault-action.outputs.token != '' }}
       shell: bash
       run: |
-        echo '::notice title=fetch-github-token::Not revoking the GitHub installation token: Vault did not issue a lease (empty lease_id). This means the token is cached, revoking it would mean the cache would contain an invalid token for the rest of the cache TTL, breaking this way other consumers' workflows that might rely on it.'
+        echo "::notice title=fetch-github-token::Not revoking the GitHub installation token: Vault did not issue a lease (empty lease_id). This means the token is cached, revoking it would mean the cache would contain an invalid token for the rest of the cache TTL, breaking this way other consumers' workflows that might rely on it."
 
     - name: Revoke GitHub Token on Exit
       if: ${{ inputs.skip-token-revoke != 'true' && steps.vault-action.outputs.has-vault-lease == 'true' }}
