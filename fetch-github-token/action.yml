@@ -9,7 +9,7 @@ inputs:
     required: false
     default: ''
   skip-token-revoke:
-    description: 'If true, skip revoking the GitHub token on exit. If false, revocation runs only when Vault issued a lease for the secret read (non-empty lease_id); an empty lease_id means the vault-plugin-secrets-github token-cache path and revocation is skipped so shared tokens are not invalidated. In that case a workflow notice explains that revocation was skipped.'
+    description: 'If true, skip revoking the GitHub token on exit. If false, revocation runs only when Vault issued a lease for the secret read (non-empty lease_id); an empty lease_id means the token is cached and revocation is skipped so other consumer workflows that might rely on it do not break. In that case a workflow notice explains that revocation was skipped.'
     required: false
     default: 'true'
 outputs:
@@ -188,11 +188,11 @@ runs:
       env:
         GH_TOKEN: ${{ steps.vault-action.outputs.token }}
 
-    - name: Skipped token revocation (no Vault lease / cached token path)
+    - name: Skipped token revocation (no Vault lease / cached token)
       if: ${{ inputs.skip-token-revoke != 'true' && steps.vault-action.outputs.has-vault-lease != 'true' && steps.vault-action.outputs.token != '' }}
       shell: bash
       run: |
-        echo '::notice title=fetch-github-token::Not revoking the GitHub installation token: Vault did not issue a lease (empty lease_id). That matches the vault-plugin-secrets-github token-cache path, where the token may be shared; Revoking it here would break other consumers.'
+        echo '::notice title=fetch-github-token::Not revoking the GitHub installation token: Vault did not issue a lease (empty lease_id). This means the token is cached, revoking it would mean the cache would contain an invalid token for the rest of the cache TTL, breaking this way other consumers' workflows that might rely on it.'
 
     - name: Revoke GitHub Token on Exit
       if: ${{ inputs.skip-token-revoke != 'true' && steps.vault-action.outputs.has-vault-lease == 'true' }}
