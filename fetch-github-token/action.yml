@@ -9,7 +9,7 @@ inputs:
     required: false
     default: ''
   skip-token-revoke:
-    description: 'If true, skip revoking the GitHub token on exit'
+    description: 'If true, skip revoking the GitHub token on exit. If false, revocation runs only when Vault issued a lease for the secret read (non-empty lease_id); an empty lease_id means the token is cached and revocation is skipped so other consumer workflows that might rely on it do not break. In that case a workflow notice explains that revocation was skipped.'
     required: false
     default: 'true'
 outputs:
@@ -136,6 +136,8 @@ runs:
       run: |
         set -euo pipefail
 
+        GITHUB_TOKEN=""
+        HAS_VAULT_LEASE=false
         MAX_RETRIES=5
         for i in $(seq 1 $MAX_RETRIES); do
           echo "::group::Attempt $i/$MAX_RETRIES"
@@ -156,9 +158,18 @@ runs:
             continue
           fi
 
-          if GITHUB_TOKEN=$(vault read -field=token "github/token/$VAULT_ROLE"); then
+          READ_JSON=""
+          if READ_JSON=$(vault read -format=json "github/token/$VAULT_ROLE" 2>/dev/null); then
+            GITHUB_TOKEN=$(echo "$READ_JSON" | jq -r '.data.token // empty')
+            if [[ -n "$GITHUB_TOKEN" ]]; then
+              LEASE_ID=$(echo "$READ_JSON" | jq -r '.lease_id // empty')
+              if [[ -n "$LEASE_ID" ]]; then
+                HAS_VAULT_LEASE=true
+              fi
+            fi
             echo "::endgroup::"
             echo "token=$GITHUB_TOKEN" >> "$GITHUB_OUTPUT"
+            echo "has-vault-lease=$HAS_VAULT_LEASE" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -177,8 +188,14 @@ runs:
       env:
         GH_TOKEN: ${{ steps.vault-action.outputs.token }}
 
+    - name: Skipped token revocation (no Vault lease / cached token)
+      if: ${{ inputs.skip-token-revoke != 'true' && steps.vault-action.outputs.has-vault-lease != 'true' && steps.vault-action.outputs.token != '' }}
+      shell: bash
+      run: |
+        echo "::notice title=fetch-github-token::Not revoking the GitHub installation token: Vault did not issue a lease (empty lease_id). This means the token is cached, revoking it would mean the cache would contain an invalid token for the rest of the cache TTL, breaking this way other consumers' workflows that might rely on it."
+
     - name: Revoke GitHub Token on Exit
-      if: ${{ inputs.skip-token-revoke != 'true' }}
+      if: ${{ inputs.skip-token-revoke != 'true' && steps.vault-action.outputs.has-vault-lease == 'true' }}
       uses: elastic/ci-gh-actions/with-post-step@v1
       with:
         main: echo "EPHEMERAL_TOKEN=${{ steps.vault-action.outputs.token }}" >> "$GITHUB_STATE"
