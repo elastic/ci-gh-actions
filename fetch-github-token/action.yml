@@ -71,6 +71,15 @@ runs:
         echo "Vault Secrets Path Expected: github/token/$VAULT_ROLE"
         echo "-------------------------------------"
 
+    - name: Verify GitHub OIDC (id-token) is available
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [[ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" || -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]]; then
+          echo "::error title=Missing id-token permission::GitHub did not expose the OIDC token endpoint for this job. Add job permissions so Actions can mint an OIDC JWT:%0A%0Apermissions:%0A  id-token: write%0A%0ASee https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect#adding-permissions-settings"
+          exit 1
+        fi
+
     - name: Install Vault CLI
       shell: bash
       # This matches the current CI Vault version
@@ -121,7 +130,7 @@ runs:
           -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
           "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=vault" | jq -r '.value') || true
         if [[ -z "$OIDC_TOKEN" || "$OIDC_TOKEN" == "null" ]]; then
-          echo "::error title=OIDC Token Failed::OIDC token request returned empty/null"
+          echo "::error title=OIDC token request failed::Could not obtain an OIDC JWT from GitHub. Ensure the job has permissions.id-token: write and that this repository allows OIDC (same as other official OIDC actions). https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect#adding-permissions-settings"
           exit 1
         fi
         echo "OIDC_TOKEN=$OIDC_TOKEN" >> "$GITHUB_ENV"
