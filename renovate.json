@@ -1,6 +1,9 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "local>elastic/renovate-config"
+    "github>elastic/renovate-config//presets/lowNoise"
+  ],
+  "addLabels": [
+    "changelog:chore"
   ]
 }
