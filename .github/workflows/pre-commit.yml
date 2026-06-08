@@ -14,4 +14,4 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-      - uses: elastic/oblt-actions/pre-commit@7a81c19824a038f33daebc323875db70c8743d1a # v1
+      - uses: elastic/oblt-actions/pre-commit@9e2226b8a321731893ff5165a6981ee6da0bb280 # v1
