@@ -204,7 +204,8 @@ runs:
       run: |
         set -euo pipefail
         GH_TOKEN=$(cat "$RUNNER_TEMP/.gh-token")
-        gh auth status
+        gh api /rate_limit --silent >/dev/null
+        echo "Ephemeral GitHub token is valid"
         {
           echo 'GH_TOKEN<<EOF'
           cat "$RUNNER_TEMP/.gh-token"
