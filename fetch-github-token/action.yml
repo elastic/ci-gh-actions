@@ -199,7 +199,7 @@ runs:
 
     - name: Token status check
       shell: bash
-      run: gh auth status
+      run: gh auth status &>/dev/null
 
     - name: Skipped token revocation (no Vault lease / cached token)
       if: ${{ inputs.skip-token-revoke != 'true' && steps.vault-action.outputs.has-vault-lease != 'true' && steps.vault-action.outputs.token != '' }}
