@@ -171,13 +171,16 @@ runs:
           if READ_JSON=$(vault read -format=json "github/token/$VAULT_ROLE" 2>/dev/null); then
             GITHUB_TOKEN=$(echo "$READ_JSON" | jq -r '.data.token // empty')
             if [[ -n "$GITHUB_TOKEN" ]]; then
+              # Mask as early as possible, before any output or further processing.
+              # New ghs_ installation tokens are ~520-char JWTs and are not auto-masked
+              # by the runner's legacy patterns. add-mask must precede GITHUB_ENV;
+              # referencing step outputs in a later step's env: block can still log raw.
+              echo "::add-mask::$GITHUB_TOKEN"
+              echo "GH_TOKEN=$GITHUB_TOKEN" >> "$GITHUB_ENV"
               LEASE_ID=$(echo "$READ_JSON" | jq -r '.lease_id // empty')
               if [[ -n "$LEASE_ID" ]]; then
                 HAS_VAULT_LEASE=true
               fi
-              # Mask before writing outputs/env: new ghs_ installation tokens are
-              # ~520-char JWTs and are not auto-masked by the runner's legacy patterns.
-              echo "::add-mask::$GITHUB_TOKEN"
             fi
             echo "::endgroup::"
             echo "token=$GITHUB_TOKEN" >> "$GITHUB_OUTPUT"
@@ -197,8 +200,6 @@ runs:
     - name: Token status check
       shell: bash
       run: gh auth status
-      env:
-        GH_TOKEN: ${{ steps.vault-action.outputs.token }}
 
     - name: Skipped token revocation (no Vault lease / cached token)
       if: ${{ inputs.skip-token-revoke != 'true' && steps.vault-action.outputs.has-vault-lease != 'true' && steps.vault-action.outputs.token != '' }}
@@ -210,5 +211,5 @@ runs:
       if: ${{ inputs.skip-token-revoke != 'true' && steps.vault-action.outputs.has-vault-lease == 'true' }}
       uses: elastic/ci-gh-actions/with-post-step@622f9dc1eecdd4af2e81dfb38028aacb1dae03e8 # v1
       with:
-        main: echo "EPHEMERAL_TOKEN=${{ steps.vault-action.outputs.token }}" >> "$GITHUB_STATE"
+        main: echo "EPHEMERAL_TOKEN=$GH_TOKEN" >> "$GITHUB_STATE"
         post: node ${{ github.action_path }}/dist/index.cjs
