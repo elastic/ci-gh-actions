@@ -203,7 +203,7 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        GH_TOKEN=$(cat "$RUNNER_TEMP/.gh-token")
+        export GH_TOKEN=$(cat "$RUNNER_TEMP/.gh-token")
         gh api /rate_limit --silent >/dev/null
         echo "Ephemeral GitHub token is valid"
         {
