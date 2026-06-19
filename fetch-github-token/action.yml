@@ -173,12 +173,10 @@ runs:
             if [[ -n "$GITHUB_TOKEN" ]]; then
               # Mask as early as possible, before any output or further processing.
               # New ghs_ installation tokens are ~520-char JWTs and are not auto-masked
-              # by the runner's legacy patterns. Defer GITHUB_ENV until after the token
-              # status check so the runner does not log GH_TOKEN in that step preamble
-              # (underscores in the token body can cause partial auto-redaction).
+              # by the runner's legacy patterns. add-mask must precede GITHUB_ENV;
+              # referencing step outputs in a later step's env: block can still log raw.
               echo "::add-mask::$GITHUB_TOKEN"
-              printf '%s' "$GITHUB_TOKEN" > "$RUNNER_TEMP/.gh-token"
-              chmod 600 "$RUNNER_TEMP/.gh-token"
+              echo "GH_TOKEN=$GITHUB_TOKEN" >> "$GITHUB_ENV"
               LEASE_ID=$(echo "$READ_JSON" | jq -r '.lease_id // empty')
               if [[ -n "$LEASE_ID" ]]; then
                 HAS_VAULT_LEASE=true
@@ -201,12 +199,7 @@ runs:
 
     - name: Token status check
       shell: bash
-      run: |
-        set -euo pipefail
-        export GH_TOKEN=$(cat "$RUNNER_TEMP/.gh-token")
-        gh auth status
-        # Single-line token; avoid heredoc delimiters (e.g. "EOF") appearing in JWT body.
-        printf 'GH_TOKEN=%s\n' "$(cat "$RUNNER_TEMP/.gh-token")" >> "$GITHUB_ENV"
+      run: gh auth status &>/dev/null
 
     - name: Skipped token revocation (no Vault lease / cached token)
       if: ${{ inputs.skip-token-revoke != 'true' && steps.vault-action.outputs.has-vault-lease != 'true' && steps.vault-action.outputs.token != '' }}
