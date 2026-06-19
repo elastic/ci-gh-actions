@@ -175,7 +175,7 @@ runs:
               if [[ -n "$LEASE_ID" ]]; then
                 HAS_VAULT_LEASE=true
               fi
-              # Register before writing outputs/env: new ghs_ installation tokens are
+              # Mask before writing outputs/env: new ghs_ installation tokens are
               # ~520-char JWTs and are not auto-masked by the runner's legacy patterns.
               echo "::add-mask::$GITHUB_TOKEN"
             fi
