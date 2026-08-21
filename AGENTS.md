@@ -71,9 +71,12 @@ Test coverage is **not uniform across the two modules**:
 
 ## Lint / other CI checks
 
-Lint and hygiene checks are driven by `.pre-commit-config.yaml`, enforced in
-CI via `.github/workflows/pre-commit.yml` (`elastic/oblt-actions/pre-commit`)
-on every PR and push to `main`:
+Lint and hygiene checks are driven by `.pre-commit-config.yaml`. Buildkite
+runs the complete normal hook set on pull requests, including secret
+scanning. The public GitHub Actions workflow uses
+`.pre-commit-config.github-actions.yaml` to preserve the existing public-only
+hooks on every PR and push to `main`; its repository-scoped token cannot read
+the private Gitleaks hook repository:
 
 - `rhysd/actionlint` — lints all GitHub Actions workflow YAML.
 - `pre-commit/pre-commit-hooks` — merge-conflict markers, YAML/XML
@@ -88,18 +91,39 @@ on every PR and push to `main`:
   has the equivalent `npm run verify-bundle` script available but it isn't
   wired into pre-commit or CI.
 
-CI runs all of the above via `elastic/oblt-actions/pre-commit`. To run the
-same checks locally, install the `pre-commit` tool yourself (see
-[pre-commit.com](https://pre-commit.com/#install)), then:
+Buildkite runs all hooks. To run the same checks locally, use the Hermit-pinned
+pre-commit launcher:
 
 ```bash
-pre-commit run --all-files
+./bin/pre-commit run --all-files
 ```
 
 The `fetch-github-token/README.md`'s "Pre-commit Hook" section additionally
 notes running `npm install` inside `fetch-github-token/` — this is for the
 module's own local build/verify hooks (Node-based), not for installing
 `pre-commit` itself.
+
+## Secret handling
+
+The canonical secret-scanning hook is `gitleaks` from private
+`elastic/gitleaks-hooks` release `v1.0.0`. It invokes the repository's
+Hermit-pinned `./bin/gitleaks` launcher (Gitleaks 8.30.1). Developers with
+access to the private hook repository can install all local hooks with
+`./bin/pre-commit install`; Buildkite runs the same complete normal hook set
+after Hermit provisions both pinned tools.
+
+- Never place credentials, tokens, private keys, cookies, or production
+  secret values in tracked files, examples, tests, prompts, logs, or generated
+  output.
+- Use the approved secret store and inject secrets only at runtime. For CI,
+  follow [Vault secrets for Buildkite](https://codex.elastic.dev/r/platform-engineering-productivity/tooling-services/buildkite/vault-secrets).
+- Run `./bin/pre-commit run gitleaks --all-files` before committing or pushing.
+- Treat any detected secret as exposed and stop for remediation.
+- Never bypass push protection or secret scanning, select a GitHub bypass
+  reason, use `--no-verify` or `SKIP=gitleaks`, or add an allowlist or
+  suppression unless the user explicitly requests that exact override.
+- A generic request to complete, commit, push, merge, or open a pull request
+  does not authorize an override.
 
 ## Making a change
 

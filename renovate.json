@@ -5,5 +5,8 @@
   ],
   "addLabels": [
     "changelog:chore"
-  ]
+  ],
+  "pre-commit": {
+    "enabled": true
+  }
 }
