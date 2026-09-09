@@ -115,7 +115,14 @@ runs:
         echo "Detected OS: $OS, Architecture: $ARCH, using Vault binary for: ${VAULT_OS}_${VAULT_ARCH}"
         VAULT_PATH=$RUNNER_TEMP/vault
         mkdir -p "$VAULT_PATH"
-        curl -fsSL "https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_${VAULT_OS}_${VAULT_ARCH}.zip" -o $VAULT_PATH/vault.zip
+        CURL_RETRY_ARGS=(--retry 5 --retry-delay 5 --connect-timeout 10 --max-time 300 --retry-max-time 300)
+        if curl --retry-connrefused --version >/dev/null 2>&1; then
+          CURL_RETRY_ARGS+=(--retry-connrefused)
+        fi
+        if curl --retry-all-errors --version >/dev/null 2>&1; then
+          CURL_RETRY_ARGS+=(--retry-all-errors)
+        fi
+        curl -fsSL "${CURL_RETRY_ARGS[@]}" "https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_${VAULT_OS}_${VAULT_ARCH}.zip" -o "$VAULT_PATH/vault.zip"
         cd "$VAULT_PATH"
         unzip vault.zip && rm vault.zip
         chmod +x vault
