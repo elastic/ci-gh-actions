@@ -1,5 +1,15 @@
 ---
 repos:
+  - repo: https://github.com/elastic/gitleaks-hooks
+    rev: v1.0.0
+    hooks:
+      - id: gitleaks
+        args:
+          - --repository
+          - elastic/ci-gh-actions
+          - --gitleaks-bin
+          - ./bin/gitleaks
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:
