@@ -147,7 +147,7 @@ configuration, or the substance of a change:
   Assisted-by: <tool name> (<most specific verified runtime identity>)
   ```
 
-- Repeat the same trailer in the pull-request description.
+- Repeat the same trailer in the pull request description.
 - Preserve the spelling and specificity of exposed runtime values; do not
   shorten a specific model slug to a broader model family.
 - Preserve valid tool-native attribution, such as
@@ -160,8 +160,8 @@ configuration, or the substance of a change:
   verifying the change.
 
 For a squash merge, verify that the final squash commit message contains every
-attribution trailer. GitHub may populate that message from the pull-request
-description, commit information, or only the pull-request title depending on
+attribution trailer. GitHub may populate that message from the pull request
+description, commit information, or only the pull request title depending on
 repository settings, so putting attribution in the PR description improves
 preservation but does not guarantee it.
 
