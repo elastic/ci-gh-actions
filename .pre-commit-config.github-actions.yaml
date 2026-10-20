@@ -1,0 +1,44 @@
+---
+# This public-only config preserves the repository's existing GitHub Actions
+# checks. The canonical Gitleaks hook is private and is enforced by Buildkite;
+# the public GitHub Actions token cannot fetch it.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-xml
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: trailing-whitespace
+        exclude: ^fetch-github-token/dist/
+  - repo: https://github.com/reakaleek/gh-action-readme
+    rev: v0.4.0
+    hooks:
+      - id: action-readme
+        verbose: true
+        args:
+          - --env=VERSION=v1
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: 0933c147c9d6587653d45fdcb4c497c57a65f9af # v1.7.10
+    hooks:
+      - id: actionlint
+
+  - repo: local
+    hooks:
+      - id: build-and-stage-github-actions
+        name: Build and stage GitHub Actions
+        entry: bash -c 'cd fetch-github-token && npm install --silent && npm run build && git add -u dist/ package-lock.json'
+        language: system
+        files: ^fetch-github-token/(revoke\.cjs|package\.json|action\.yml)$
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: verify-github-actions-bundle
+        name: Verify GitHub Actions bundle is up-to-date
+        entry: bash -c 'cd fetch-github-token && npm install --silent && npm run verify-bundle && rm -rf node_modules'
+        language: system
+        files: ^fetch-github-token/(revoke\.cjs|package\.json|action\.yml)$
+        pass_filenames: false
