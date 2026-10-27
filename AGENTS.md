@@ -2,6 +2,8 @@
 
 ## Repository purpose
 
+Placeholder change.
+
 This public repository publishes two independent reusable GitHub Actions.
 See the [`fetch-github-token` README](fetch-github-token/README.md) and the
 [`with-post-step` README](with-post-step/README.md) for why each action exists,
