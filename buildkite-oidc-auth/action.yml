@@ -14,7 +14,7 @@ inputs:
     required: true
   scope:
     description: >
-      Space-separated Buildkite API scopes to request, for example `read_builds`.
+      Space-separated Buildkite API scopes to request, for example `read_organizations`.
       Required when the workload identity has no default scopes.
     required: false
     default: ""

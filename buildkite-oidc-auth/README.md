@@ -17,11 +17,11 @@ are not secrets.
 
 ## Inputs
 <!--inputs-->
-| Name        | Description                                                                                                                                | Required | Default |
-|-------------|--------------------------------------------------------------------------------------------------------------------------------------------|----------|---------|
-| `client-id` | Client ID of the Buildkite workload identity. Not a secret.                                                                                | `true`   | ` `     |
-| `audience`  | OIDC audience configured on the Buildkite workload identity. Not a secret. Copy it from the workload identity's page in Buildkite.<br>     | `true`   | ` `     |
-| `scope`     | Space-separated Buildkite API scopes to request, for example `read_builds`. Required when the workload identity has no default scopes.<br> | `false`  | ` `     |
+| Name        | Description                                                                                                                                       | Required | Default |
+|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------|----------|---------|
+| `client-id` | Client ID of the Buildkite workload identity. Not a secret.                                                                                       | `true`   | ` `     |
+| `audience`  | OIDC audience configured on the Buildkite workload identity. Not a secret. Copy it from the workload identity's page in Buildkite.<br>            | `true`   | ` `     |
+| `scope`     | Space-separated Buildkite API scopes to request, for example `read_organizations`. Required when the workload identity has no default scopes.<br> | `false`  | ` `     |
 <!--/inputs-->
 ## Outputs
 <!--outputs-->
@@ -40,7 +40,7 @@ steps:
     with:
       client-id: "<client ID from the workload identity page>"
       audience: "<OIDC audience from the workload identity page>"
-      scope: read_builds # needed when the identity has no default scopes
+      # scope: read_organizations # only needed if the identity has no default scopes
 
   - env:
       BUILDKITE_API_TOKEN: ${{ steps.buildkite.outputs.token }}

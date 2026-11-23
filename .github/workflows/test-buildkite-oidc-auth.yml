@@ -33,7 +33,6 @@ jobs:
         with:
           client-id: ${{ vars.BUILDKITE_WIF_CLIENT_ID }}
           audience: ${{ vars.BUILDKITE_WIF_AUDIENCE }}
-          scope: read_builds
       - name: Call the Buildkite REST API
         env:
           BUILDKITE_API_TOKEN: ${{ steps.buildkite.outputs.token }}
