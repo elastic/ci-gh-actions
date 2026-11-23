@@ -1,0 +1,29 @@
+name: Buildkite OIDC authentication
+description: >
+  Exchange a GitHub Actions OIDC token for a short-lived Buildkite REST API token
+  using Buildkite workload identity federation.
+
+inputs:
+  client-id:
+    description: Client ID of the Buildkite workload identity. Not a secret.
+    required: true
+  audience:
+    description: >
+      OIDC audience configured on the Buildkite workload identity. Not a secret.
+      Copy it from the workload identity's page in Buildkite.
+    required: true
+
+outputs:
+  token:
+    description: Short-lived Buildkite API token. Masked in logs.
+    value: ${{ steps.exchange.outputs.token }}
+
+runs:
+  using: composite
+  steps:
+    - id: exchange
+      shell: bash
+      env:
+        BUILDKITE_CLIENT_ID: ${{ inputs.client-id }}
+        BUILDKITE_AUDIENCE: ${{ inputs.audience }}
+      run: bash "${{ github.action_path }}/exchange.sh"

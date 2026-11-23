@@ -2,12 +2,15 @@
 
 ## Repository purpose
 
-This public repository publishes two independent reusable GitHub Actions.
+This public repository publishes three independent reusable GitHub Actions.
 See the [`fetch-github-token` README](fetch-github-token/README.md) and the
 [`with-post-step` README](with-post-step/README.md) for why each action exists,
-who uses it, and its responsibility boundary.
+who uses it, and its responsibility boundary. A third action,
+[`buildkite-oidc-auth`](buildkite-oidc-auth/README.md), exchanges a GitHub OIDC
+token for a short-lived Buildkite API token; it is a pure composite action
+(`action.yml` plus `exchange.sh`) with no Node build and no `dist/`.
 
-Each module has its own `package.json`, `action.yml`, and `README.md`; there is
+The two Node modules each have their own `package.json`, `action.yml`, and `README.md`; there is
 no shared build, source, or runtime between them. Treat them as separate
 projects that happen to live in one repository; changes to one rarely require
 touching the other.
@@ -50,7 +53,12 @@ manual step; there is no pre-commit hook or CI check wired up for it.
 
 ## Tests
 
-Test coverage is **not uniform across the two modules**:
+Test coverage is **not uniform across the modules**:
+
+- `buildkite-oidc-auth` has a Bash suite
+  (`buildkite-oidc-auth/tests/exchange_test.sh`) that runs `exchange.sh`
+  against a stubbed `curl`. It runs on PRs touching that module via
+  `.github/workflows/test-buildkite-oidc-auth.yml`, together with `shellcheck`.
 
 - `fetch-github-token` has a real Jest suite
   (`fetch-github-token/tests/revoke.test.mjs`, run via `npm test` ->

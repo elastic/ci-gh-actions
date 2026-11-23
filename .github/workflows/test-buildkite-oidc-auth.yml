@@ -1,0 +1,20 @@
+name: test-buildkite-oidc-auth
+
+on:
+  pull_request:
+    paths:
+      - "buildkite-oidc-auth/**"
+      - ".github/workflows/test-buildkite-oidc-auth.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Shellcheck
+        run: shellcheck buildkite-oidc-auth/*.sh buildkite-oidc-auth/tests/*.sh
+      - name: Test
+        run: bash buildkite-oidc-auth/tests/exchange_test.sh
