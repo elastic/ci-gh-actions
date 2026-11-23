@@ -12,6 +12,12 @@ inputs:
       OIDC audience configured on the Buildkite workload identity. Not a secret.
       Copy it from the workload identity's page in Buildkite.
     required: true
+  scope:
+    description: >
+      Space-separated Buildkite API scopes to request, for example `read_builds`.
+      Required when the workload identity has no default scopes.
+    required: false
+    default: ""
 
 outputs:
   token:
@@ -26,4 +32,5 @@ runs:
       env:
         BUILDKITE_CLIENT_ID: ${{ inputs.client-id }}
         BUILDKITE_AUDIENCE: ${{ inputs.audience }}
+        BUILDKITE_SCOPE: ${{ inputs.scope }}
       run: bash "${{ github.action_path }}/exchange.sh"

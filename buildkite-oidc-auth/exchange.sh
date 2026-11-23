@@ -28,6 +28,7 @@ describe_claims() {
 [[ -n "${BUILDKITE_CLIENT_ID:-}" ]] || fail "client-id must not be empty"
 [[ "$BUILDKITE_CLIENT_ID" =~ ^[A-Za-z0-9._-]+$ ]] || fail "client-id contains unexpected characters"
 [[ -n "${BUILDKITE_AUDIENCE:-}" ]] || fail "audience must not be empty"
+[[ "${BUILDKITE_SCOPE:-}" =~ ^[A-Za-z0-9_\ :.-]*$ ]] || fail "scope contains unexpected characters"
 if [[ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" || -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]]; then
   fail "No GitHub OIDC token available. Grant the job 'permissions: id-token: write'."
 fi
@@ -43,9 +44,14 @@ oidc_token="$(jq -er '.value | select(type == "string" and length > 0)' <<<"$res
   fail "GitHub OIDC response did not contain a token"
 echo "::add-mask::${oidc_token}"
 
+scope_config=""
+if [[ -n "${BUILDKITE_SCOPE:-}" ]]; then
+  scope_config="$(printf 'data-urlencode = "scope=%s"\n' "$BUILDKITE_SCOPE")"
+fi
+
 response="$(
-  printf 'data-urlencode = "grant_type=client_credentials"\ndata-urlencode = "client_id=%s"\ndata-urlencode = "client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"\ndata-urlencode = "client_assertion=%s"\nheader = "Accept: application/json"\n' \
-    "$BUILDKITE_CLIENT_ID" "$oidc_token" |
+  printf '%sdata-urlencode = "grant_type=client_credentials"\ndata-urlencode = "client_id=%s"\ndata-urlencode = "client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"\ndata-urlencode = "client_assertion=%s"\nheader = "Accept: application/json"\n' \
+    "$scope_config" "$BUILDKITE_CLIENT_ID" "$oidc_token" |
     request "$TOKEN_ENDPOINT"
 )" || {
   echo "::group::Buildkite token exchange diagnostics" >&2
