@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Shellcheck
@@ -22,7 +22,7 @@ jobs:
   integration:
     # Fork PRs get neither id-token nor repository variables.
     if: github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     permissions:
       contents: read
       id-token: write
@@ -33,6 +33,7 @@ jobs:
         with:
           client-id: ${{ vars.BUILDKITE_WIF_CLIENT_ID }}
           audience: ${{ vars.BUILDKITE_WIF_AUDIENCE }}
+          scope: read_organizations
       - name: Call the Buildkite REST API
         env:
           BUILDKITE_API_TOKEN: ${{ steps.buildkite.outputs.token }}
