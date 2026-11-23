@@ -56,6 +56,8 @@ steps:
 
 The token is short-lived and is not refreshed; long-running jobs must run the action again.
 
+The runner needs `curl` 7.76 or newer (for `--fail-with-body`) and `jq`. GitHub-hosted Ubuntu 22.04 and 24.04 runners meet this.
+
 ## Development
 
 Tests stub `curl` and cover success, masking, missing permissions and failure modes:
