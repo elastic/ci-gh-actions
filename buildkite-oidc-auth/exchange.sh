@@ -11,8 +11,14 @@ fail() {
 
 # Config is read from stdin so tokens never appear in the process list.
 # -q ignores any runner .curlrc. The single-use exchange assertion is never retried.
+# --fail-with-body is only used for the exchange: with --retry it would append failed bodies to stdout.
 request() {
-  curl -q --silent --show-error --fail-with-body --max-time 30 --config - "$@"
+  curl -q --silent --show-error --max-time 30 --config - "$@"
+}
+
+# Rejects control characters so a malformed token can't split ::add-mask:: or GITHUB_OUTPUT lines.
+is_safe_token() {
+  [[ "$1" =~ ^[A-Za-z0-9._~+/=-]+$ ]]
 }
 
 # Only the OAuth error fields are surfaced; they never contain tokens.
@@ -36,12 +42,13 @@ fi
 response="$(
   printf 'header = "Authorization: Bearer %s"\nheader = "Accept: application/json"\n' \
     "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" |
-    request --retry 3 --get --data-urlencode "audience=${BUILDKITE_AUDIENCE}" \
+    request --fail --retry 3 --get --data-urlencode "audience=${BUILDKITE_AUDIENCE}" \
       "$ACTIONS_ID_TOKEN_REQUEST_URL"
 )" || fail "Failed to request a GitHub OIDC token"
 
 oidc_token="$(jq -er '.value | select(type == "string" and length > 0)' <<<"$response")" ||
   fail "GitHub OIDC response did not contain a token"
+is_safe_token "$oidc_token" || fail "GitHub OIDC token has an unexpected format"
 echo "::add-mask::${oidc_token}"
 
 scope_config=""
@@ -52,7 +59,7 @@ fi
 response="$(
   printf '%sdata-urlencode = "grant_type=client_credentials"\ndata-urlencode = "client_id=%s"\ndata-urlencode = "client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"\ndata-urlencode = "client_assertion=%s"\nheader = "Accept: application/json"\n' \
     "$scope_config" "$BUILDKITE_CLIENT_ID" "$oidc_token" |
-    request "$TOKEN_ENDPOINT"
+    request --fail-with-body "$TOKEN_ENDPOINT"
 )" || {
   echo "::group::Buildkite token exchange diagnostics" >&2
   describe_error "$response" >&2
@@ -64,6 +71,7 @@ response="$(
 
 token="$(jq -er '.access_token | select(type == "string" and length > 0)' <<<"$response")" ||
   fail "Buildkite token exchange response did not contain an access_token"
+is_safe_token "$token" || fail "Buildkite access_token has an unexpected format"
 echo "::add-mask::${token}"
 
 echo "token=${token}" >>"${GITHUB_OUTPUT:?GITHUB_OUTPUT is not set}"

@@ -51,6 +51,8 @@ grep -q '^-q ' "$tmp/args" || { echo "FAIL success: curl -q missing"; failures=$
 run scoped 0 'BUILDKITE_SCOPE=read_builds write_builds'
 { grep -qx 'data-urlencode = "scope=read_builds write_builds"' "$tmp/config" && grep -qx 'data-urlencode = "grant_type=client_credentials"' "$tmp/config"; } || { echo "FAIL scoped: scope not sent"; failures=$((failures + 1)); }
 run injected-scope 1 $'BUILDKITE_SCOPE=x"\nurl = "https://evil.example'
+run retry-flags 0
+{ sed -n 1p "$tmp/args" | grep -q -- '--retry' && ! sed -n 1p "$tmp/args" | grep -q -- '--fail-with-body' && sed -n 2p "$tmp/args" | grep -q -- '--fail-with-body' && ! sed -n 2p "$tmp/args" | grep -q -- '--retry'; } || { echo "FAIL retry-flags"; failures=$((failures + 1)); }
 run injected-client-id 1 $'BUILDKITE_CLIENT_ID=x"\nurl = "https://evil.example'
 run missing-id-token-permission 1 ACTIONS_ID_TOKEN_REQUEST_URL=
 run empty-client-id 1 BUILDKITE_CLIENT_ID=
@@ -60,6 +62,8 @@ run github-missing-value 1 'STUB_GITHUB={"value":""}'
 run github-invalid-json 1 'STUB_GITHUB=<html>'
 run buildkite-curl-failure 1 STUB_BUILDKITE_RC=22
 run buildkite-missing-token 1 'STUB_BUILDKITE={"error":"invalid_client"}'
+run github-multiline-token 1 'STUB_GITHUB={"value":"gh-jwt\nleak"}'
+run buildkite-multiline-token 1 'STUB_BUILDKITE={"access_token":"bktx_secret\n::set-output x=y"}'
 run buildkite-null-token 1 'STUB_BUILDKITE={"access_token":null}'
 
 exit $((failures > 0))

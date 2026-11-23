@@ -38,5 +38,5 @@ jobs:
         env:
           BUILDKITE_API_TOKEN: ${{ steps.buildkite.outputs.token }}
         run: |
-          curl -sSf -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
-            https://api.buildkite.com/v2/organizations | jq -er '.[].name'
+          printf 'header = "Authorization: Bearer %s"\n' "$BUILDKITE_API_TOKEN" |
+            curl -sSf --config - https://api.buildkite.com/v2/organizations | jq -er '.[].name'

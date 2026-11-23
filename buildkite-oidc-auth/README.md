@@ -45,8 +45,9 @@ steps:
   - env:
       BUILDKITE_API_TOKEN: ${{ steps.buildkite.outputs.token }}
     run: |
-      curl -sSf -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
-        https://api.buildkite.com/v2/organizations | jq -er '.[].name'
+      # The header goes through stdin so the token stays out of the process list.
+      printf 'header = "Authorization: Bearer %s"\n' "$BUILDKITE_API_TOKEN" |
+        curl -sSf --config - https://api.buildkite.com/v2/organizations | jq -er '.[].name'
 ```
 <!--/usage-->
 
