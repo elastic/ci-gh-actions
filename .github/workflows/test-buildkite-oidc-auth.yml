@@ -18,3 +18,24 @@ jobs:
         run: shellcheck buildkite-oidc-auth/*.sh buildkite-oidc-auth/tests/*.sh
       - name: Test
         run: bash buildkite-oidc-auth/tests/exchange_test.sh
+
+  integration:
+    # Fork PRs get neither id-token nor repository variables.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./buildkite-oidc-auth
+        id: buildkite
+        with:
+          client-id: ${{ vars.BUILDKITE_WIF_CLIENT_ID }}
+          audience: ${{ vars.BUILDKITE_WIF_AUDIENCE }}
+      - name: Call the Buildkite REST API
+        env:
+          BUILDKITE_API_TOKEN: ${{ steps.buildkite.outputs.token }}
+        run: |
+          curl -sSf -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
+            https://api.buildkite.com/v2/organizations
