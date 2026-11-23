@@ -46,7 +46,7 @@ echo "::add-mask::${oidc_token}"
 
 scope_config=""
 if [[ -n "${BUILDKITE_SCOPE:-}" ]]; then
-  scope_config="$(printf 'data-urlencode = "scope=%s"\n' "$BUILDKITE_SCOPE")"
+  scope_config="data-urlencode = \"scope=${BUILDKITE_SCOPE}\""$'\n'
 fi
 
 response="$(
