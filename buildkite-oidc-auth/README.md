@@ -46,7 +46,7 @@ steps:
       BUILDKITE_API_TOKEN: ${{ steps.buildkite.outputs.token }}
     run: |
       curl -sSf -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
-        https://api.buildkite.com/v2/organizations
+        https://api.buildkite.com/v2/organizations | jq -er '.[].name'
 ```
 <!--/usage-->
 
