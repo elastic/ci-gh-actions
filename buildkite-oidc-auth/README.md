@@ -57,7 +57,7 @@ steps:
     run: |
       # The header goes through stdin so the token stays out of the process list.
       printf 'header = "Authorization: Bearer %s"\n' "$BUILDKITE_API_TOKEN" |
-        curl -sSf --config - https://api.buildkite.com/v2/organizations | jq -er '.[].name'
+        curl -q -sSf --config - https://api.buildkite.com/v2/organizations | jq -er '.[].name'
 ```
 <!--/usage-->
 

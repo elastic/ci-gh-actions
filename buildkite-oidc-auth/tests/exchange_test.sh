@@ -8,7 +8,8 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 mkdir "$tmp/bin"
 
-# Stub: GitHub calls return $STUB_GITHUB with @N@ replaced by the GitHub call number.
+# Stub: GitHub call N returns STUB_GITHUB_N (or $STUB_GITHUB) with @N@ replaced by its number.
+# It can also return status STUB_GITHUB_STATUS_N and exit code STUB_GITHUB_RC_N.
 # Buildkite call N returns $STUB_BUILDKITE with status STUB_BK_STATUS_N (default 200),
 # headers STUB_BK_HEADERS_N, preceding response blocks STUB_BK_INTERIM_N,
 # and curl exit code STUB_BUILDKITE_RC.
@@ -20,8 +21,11 @@ url="${*: -1}"
 echo "$url" >>"$STUB_DIR/urls"
 if [[ "$url" != https://buildkite.com/* ]]; then
   g=$(($(cat "$STUB_DIR/gh_count" 2>/dev/null || echo 0) + 1)); echo "$g" >"$STUB_DIR/gh_count"
-  printf '%s' "${STUB_GITHUB//@N@/$g}"
-  exit "${STUB_GITHUB_RC:-0}"
+  body_var="STUB_GITHUB_$g"; status_var="STUB_GITHUB_STATUS_$g"; rc_var="STUB_GITHUB_RC_$g"
+  body="${STUB_GITHUB//@N@/$g}"; [[ -n "${!body_var:-}" ]] && body="${!body_var}"
+  status="${!status_var:-200}"; rc="${STUB_GITHUB_RC:-0}"; [[ -n "${!rc_var:-}" ]] && rc="${!rc_var}"
+  printf '%s\n%s' "$body" "$status"
+  exit "$rc"
 fi
 n=$(($(cat "$STUB_DIR/bk_count" 2>/dev/null || echo 0) + 1)); echo "$n" >"$STUB_DIR/bk_count"
 [[ "${STUB_BUILDKITE_RC:-0}" -eq 0 ]] || exit "$STUB_BUILDKITE_RC"
@@ -76,9 +80,14 @@ check "scoped: scope sent" grep -qx 'data-urlencode = "scope=read_builds write_b
 check "scoped: grant_type sent" grep -qx 'data-urlencode = "grant_type=client_credentials"' "$tmp/config"
 run injected-scope 1 $'BUILDKITE_SCOPE=x"\nurl = "https://evil.example'
 
-run retry-flags 0
-check "retry-flags: GitHub retries" bash -c "sed -n 1p '$tmp/args' | grep -q -- '--retry'"
-check "retry-flags: exchange not retried by curl" bash -c "! sed -n 2p '$tmp/args' | grep -q -- '--retry'"
+run github-partial-response-retried 0 \
+  'STUB_GITHUB_1={"value":"partial' STUB_GITHUB_RC_1=28 \
+  'STUB_GITHUB_2={"value":"gh-jwt"}'
+check "OIDC retry: fresh curl invocation" test "$(calls gh_count)" -eq 2
+check "OIDC retry: no curl-internal retry" bash -c "! grep -q -- '--retry' '$tmp/args'"
+check "OIDC retry: transient backoff" grep -qx '1' "$tmp/sleeps"
+check "OIDC retry: final token output" grep -qx 'token=bktx_secret' "$tmp/out"
+check "OIDC retry: final assertion masked" grep -qx '::add-mask::gh-jwt' "$tmp/stdout"
 
 run rate-limited-then-success 0 STUB_GITHUB='{"value":"gh-jwt@N@"}' \
   STUB_BK_STATUS_1=429 'STUB_BK_HEADERS_1=ratelimit-workloadidentitytokenexchange-reset: 5' \

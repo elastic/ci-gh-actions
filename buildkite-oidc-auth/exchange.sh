@@ -35,13 +35,40 @@ describe_claims() {
 
 # Sets oidc_token. Assertions are single-use, so every exchange attempt needs a fresh one.
 fetch_oidc_token() {
-  local response
-  response="$(
-    printf 'header = "Authorization: Bearer %s"\nheader = "Accept: application/json"\n' \
-      "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" |
-      request --fail --retry 3 --get --data-urlencode "audience=${BUILDKITE_AUDIENCE}" \
-        "$ACTIONS_ID_TOKEN_REQUEST_URL"
-  )" || fail "Failed to request a GitHub OIDC token"
+  local response status curl_status attempt delay
+  for attempt in 0 1 2 3; do
+    if response="$(
+      printf 'header = "Authorization: Bearer %s"\nheader = "Accept: application/json"\n' \
+        "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" |
+        request --get --data-urlencode "audience=${BUILDKITE_AUDIENCE}" \
+          --write-out $'\n%{http_code}' "$ACTIONS_ID_TOKEN_REQUEST_URL"
+    )"; then
+      curl_status=0
+    else
+      curl_status=$?
+    fi
+
+    if ((curl_status != 0)); then
+      case "$curl_status" in
+        5|6|7|16|18|28|35|52|55|56) ;;
+        *) fail "Failed to request a GitHub OIDC token (curl exit ${curl_status})" ;;
+      esac
+      ((attempt < 3)) || fail "Failed to request a GitHub OIDC token after 3 retries"
+    else
+      status="${response##*$'\n'}"
+      response="${response%$'\n'*}"
+      [[ "$status" =~ ^[1-5][0-9][0-9]$ ]] ||
+        fail "GitHub OIDC request returned an indeterminate HTTP status"
+      if [[ "$status" != 408 && "$status" != 429 && "$status" != 5?? ]]; then
+        [[ "$status" == 2?? ]] || fail "GitHub OIDC request failed with HTTP ${status}"
+        break
+      fi
+      ((attempt < 3)) || fail "GitHub OIDC request failed with HTTP ${status} after 3 retries"
+    fi
+
+    delay=$((1 << attempt))
+    sleep "$delay"
+  done
 
   oidc_token="$(jq -er '.value | select(type == "string" and length > 0)' <<<"$response")" ||
     fail "GitHub OIDC response did not contain a token"

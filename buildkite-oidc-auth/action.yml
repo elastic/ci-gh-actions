@@ -33,4 +33,5 @@ runs:
         BUILDKITE_CLIENT_ID: ${{ inputs.client-id }}
         BUILDKITE_AUDIENCE: ${{ inputs.audience }}
         BUILDKITE_SCOPE: ${{ inputs.scope }}
-      run: bash "${{ github.action_path }}/exchange.sh"
+        BUILDKITE_ACTION_PATH: ${{ github.action_path }}
+      run: bash "$BUILDKITE_ACTION_PATH/exchange.sh"

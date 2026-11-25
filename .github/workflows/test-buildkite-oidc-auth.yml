@@ -39,4 +39,4 @@ jobs:
           BUILDKITE_API_TOKEN: ${{ steps.buildkite.outputs.token }}
         run: |
           printf 'header = "Authorization: Bearer %s"\n' "$BUILDKITE_API_TOKEN" |
-            curl -sSf --config - https://api.buildkite.com/v2/organizations | jq -er '.[].name'
+            curl -q -sSf --config - https://api.buildkite.com/v2/organizations | jq -er '.[].name'
