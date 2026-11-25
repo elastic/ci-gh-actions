@@ -10,7 +10,8 @@ mkdir "$tmp/bin"
 
 # Stub: GitHub calls return $STUB_GITHUB with @N@ replaced by the GitHub call number.
 # Buildkite call N returns $STUB_BUILDKITE with status STUB_BK_STATUS_N (default 200),
-# headers STUB_BK_HEADERS_N and curl exit code STUB_BUILDKITE_RC.
+# headers STUB_BK_HEADERS_N, preceding response blocks STUB_BK_INTERIM_N,
+# and curl exit code STUB_BUILDKITE_RC.
 cat >"$tmp/bin/curl" <<'STUB'
 #!/usr/bin/env bash
 cat >>"$STUB_DIR/config"
@@ -24,9 +25,9 @@ if [[ "$url" != https://buildkite.com/* ]]; then
 fi
 n=$(($(cat "$STUB_DIR/bk_count" 2>/dev/null || echo 0) + 1)); echo "$n" >"$STUB_DIR/bk_count"
 [[ "${STUB_BUILDKITE_RC:-0}" -eq 0 ]] || exit "$STUB_BUILDKITE_RC"
-status_var="STUB_BK_STATUS_$n"; headers_var="STUB_BK_HEADERS_$n"
+status_var="STUB_BK_STATUS_$n"; headers_var="STUB_BK_HEADERS_$n"; interim_var="STUB_BK_INTERIM_$n"
 while [[ $# -gt 0 ]]; do
-  if [[ "$1" == --dump-header ]]; then printf 'HTTP/2 %s\r\n%b\r\n' "${!status_var:-200}" "${!headers_var:-}" >"$2"; fi
+  if [[ "$1" == --dump-header ]]; then printf '%bHTTP/2 %s\r\n%b\r\n\r\n' "${!interim_var:-}" "${!status_var:-200}" "${!headers_var:-}" >"$2"; fi
   shift
 done
 printf '%s\n%s' "$STUB_BUILDKITE" "${!status_var:-200}"
@@ -113,6 +114,29 @@ run rate-limit-duplicate-reset 1 STUB_BK_STATUS_1=429 \
   'STUB_BK_HEADERS_1=RateLimit-WorkloadIdentityTokenExchange-Reset: 1\r\nratelimit-workloadidentitytokenexchange-reset: 1'
 check "duplicate reset: message" grep -q 'duplicate' "$tmp/stderr"
 check "invalid headers: no sleep" test ! -e "$tmp/sleeps"
+
+run rate-limit-interim-reset-only 1 STUB_BK_STATUS_1=429 \
+  'STUB_BK_INTERIM_1=HTTP/1.1 100 Continue\r\nRateLimit-WorkloadIdentityTokenExchange-Reset: 1\r\n\r\n'
+check "interim reset only: missing final header" grep -q 'without a RateLimit-WorkloadIdentityTokenExchange-Reset header' "$tmp/stderr"
+check "interim reset only: no retry" test "$(calls bk_count)" -eq 1
+check "interim reset only: no sleep" test ! -e "$tmp/sleeps"
+
+run rate-limit-different-interim-final-reset 0 STUB_BK_STATUS_1=429 \
+  'STUB_BK_INTERIM_1=HTTP/1.1 200 Connection established\r\nRateLimit-WorkloadIdentityTokenExchange-Reset: 250\r\n\r\n' \
+  'STUB_BK_HEADERS_1=RateLimit-WorkloadIdentityTokenExchange-Reset: 4'
+check "final reset: two exchanges" test "$(calls bk_count)" -eq 2
+check "final reset: only final delay used" bash -c "s=(\$(cat '$tmp/sleeps')); ((\${#s[@]} == 1 && s[0] >= 5 && s[0] <= 7))"
+
+run rate-limit-empty-duplicate-reset 1 STUB_BK_STATUS_1=429 \
+  'STUB_BK_HEADERS_1=RateLimit-WorkloadIdentityTokenExchange-Reset: 1\r\nratelimit-workloadidentitytokenexchange-reset:'
+check "empty duplicate reset: message" grep -q 'duplicate' "$tmp/stderr"
+check "empty duplicate reset: no retry" test "$(calls bk_count)" -eq 1
+check "empty duplicate reset: no sleep" test ! -e "$tmp/sleeps"
+
+run rate-limit-empty-reset 1 STUB_BK_STATUS_1=429 \
+  'STUB_BK_HEADERS_1=RateLimit-WorkloadIdentityTokenExchange-Reset:'
+check "empty reset: invalid header" grep -q 'invalid RateLimit-WorkloadIdentityTokenExchange-Reset header' "$tmp/stderr"
+check "empty reset: no sleep" test ! -e "$tmp/sleeps"
 
 run buildkite-http-error-not-retried 1 STUB_BK_STATUS_1=503 'STUB_BK_HEADERS_1=RateLimit-WorkloadIdentityTokenExchange-Reset: 1' \
   'STUB_BUILDKITE={"error":"invalid_client","error_description":"nope"}'

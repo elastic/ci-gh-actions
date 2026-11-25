@@ -49,16 +49,31 @@ fetch_oidc_token() {
   echo "::add-mask::${oidc_token}"
 }
 
-# Prints the rate limit reset delay in seconds from the dumped response headers.
+# Prints the rate limit reset delay from the final response header block.
 # Runs in a subshell, so fail aborts via the caller's set -e.
 reset_seconds() {
-  local values count value
-  values="$(tr -d '\r' <"$1" | awk -v h="$(tr '[:upper:]' '[:lower:]' <<<"$RESET_HEADER")" '
-    { i = index($0, ":"); if (i && tolower(substr($0, 1, i - 1)) == h) { v = substr($0, i + 1); gsub(/^[ \t]+|[ \t]+$/, "", v); print v } }')"
-  count="$(grep -c '' <<<"$values" || true)"
-  [[ -n "$values" ]] || fail "Buildkite token exchange was rate limited (HTTP 429) without a ${RESET_HEADER} header"
+  local parsed count value
+  # Count before command substitution so empty duplicate values cannot disappear.
+  parsed="$(awk -v h="$RESET_HEADER" '
+    { sub(/\r$/, "") }
+    /^HTTP\/[0-9.]+ [0-9][0-9][0-9]([ \t]|$)/ {
+      count = 0; value = ""; in_headers = 1; next
+    }
+    /^$/ { in_headers = 0 }
+    in_headers {
+      i = index($0, ":")
+      if (i && tolower(substr($0, 1, i - 1)) == tolower(h)) {
+        count++
+        value = substr($0, i + 1)
+        gsub(/^[ \t]+|[ \t]+$/, "", value)
+      }
+    }
+    END { printf "%d:%s", count, value }
+  ' "$1")"
+  count="${parsed%%:*}"
+  value="${parsed#*:}"
+  ((count > 0)) || fail "Buildkite token exchange was rate limited (HTTP 429) without a ${RESET_HEADER} header"
   ((count == 1)) || fail "Buildkite token exchange was rate limited (HTTP 429) with duplicate ${RESET_HEADER} headers"
-  value="$values"
   # Capped at 9 digits so the arithmetic below cannot overflow.
   [[ "$value" =~ ^[0-9]{1,9}$ ]] ||
     fail "Buildkite token exchange was rate limited (HTTP 429) with an invalid ${RESET_HEADER} header"
