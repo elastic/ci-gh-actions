@@ -3,6 +3,9 @@
 set -euo pipefail
 
 TOKEN_ENDPOINT="https://buildkite.com/oauth/token"
+RESET_HEADER="RateLimit-WorkloadIdentityTokenExchange-Reset"
+MAX_RETRIES=3
+MAX_TOTAL_WAIT=300
 
 fail() {
   echo "::error title=Buildkite OIDC authentication::$*" >&2
@@ -10,8 +13,7 @@ fail() {
 }
 
 # Config is read from stdin so tokens never appear in the process list.
-# -q ignores any runner .curlrc. The single-use exchange assertion is never retried.
-# --fail-with-body is only used for the exchange: with --retry it would append failed bodies to stdout.
+# -q ignores any runner .curlrc.
 request() {
   curl -q --silent --show-error --max-time 30 --config - "$@"
 }
@@ -31,6 +33,38 @@ describe_claims() {
   jq -R 'split(".")[1] | gsub("-"; "+") | gsub("_"; "/") | @base64d | fromjson | {iss, sub, aud}' <<<"$1" 2>/dev/null || true
 }
 
+# Sets oidc_token. Assertions are single-use, so every exchange attempt needs a fresh one.
+fetch_oidc_token() {
+  local response
+  response="$(
+    printf 'header = "Authorization: Bearer %s"\nheader = "Accept: application/json"\n' \
+      "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" |
+      request --fail --retry 3 --get --data-urlencode "audience=${BUILDKITE_AUDIENCE}" \
+        "$ACTIONS_ID_TOKEN_REQUEST_URL"
+  )" || fail "Failed to request a GitHub OIDC token"
+
+  oidc_token="$(jq -er '.value | select(type == "string" and length > 0)' <<<"$response")" ||
+    fail "GitHub OIDC response did not contain a token"
+  is_safe_token "$oidc_token" || fail "GitHub OIDC token has an unexpected format"
+  echo "::add-mask::${oidc_token}"
+}
+
+# Prints the rate limit reset delay in seconds from the dumped response headers.
+# Runs in a subshell, so fail aborts via the caller's set -e.
+reset_seconds() {
+  local values count value
+  values="$(tr -d '\r' <"$1" | awk -v h="$(tr '[:upper:]' '[:lower:]' <<<"$RESET_HEADER")" '
+    { i = index($0, ":"); if (i && tolower(substr($0, 1, i - 1)) == h) { v = substr($0, i + 1); gsub(/^[ \t]+|[ \t]+$/, "", v); print v } }')"
+  count="$(grep -c '' <<<"$values" || true)"
+  [[ -n "$values" ]] || fail "Buildkite token exchange was rate limited (HTTP 429) without a ${RESET_HEADER} header"
+  ((count == 1)) || fail "Buildkite token exchange was rate limited (HTTP 429) with duplicate ${RESET_HEADER} headers"
+  value="$values"
+  # Capped at 9 digits so the arithmetic below cannot overflow.
+  [[ "$value" =~ ^[0-9]{1,9}$ ]] ||
+    fail "Buildkite token exchange was rate limited (HTTP 429) with an invalid ${RESET_HEADER} header"
+  echo "$((10#$value))"
+}
+
 [[ -n "${BUILDKITE_CLIENT_ID:-}" ]] || fail "client-id must not be empty"
 [[ "$BUILDKITE_CLIENT_ID" =~ ^[A-Za-z0-9._-]+$ ]] || fail "client-id contains unexpected characters"
 [[ -n "${BUILDKITE_AUDIENCE:-}" ]] || fail "audience must not be empty"
@@ -39,35 +73,57 @@ if [[ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" || -z "${ACTIONS_ID_TOKEN_REQUEST_T
   fail "No GitHub OIDC token available. Grant the job 'permissions: id-token: write'."
 fi
 
-response="$(
-  printf 'header = "Authorization: Bearer %s"\nheader = "Accept: application/json"\n' \
-    "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" |
-    request --fail --retry 3 --get --data-urlencode "audience=${BUILDKITE_AUDIENCE}" \
-      "$ACTIONS_ID_TOKEN_REQUEST_URL"
-)" || fail "Failed to request a GitHub OIDC token"
-
-oidc_token="$(jq -er '.value | select(type == "string" and length > 0)' <<<"$response")" ||
-  fail "GitHub OIDC response did not contain a token"
-is_safe_token "$oidc_token" || fail "GitHub OIDC token has an unexpected format"
-echo "::add-mask::${oidc_token}"
-
 scope_config=""
 if [[ -n "${BUILDKITE_SCOPE:-}" ]]; then
   scope_config="data-urlencode = \"scope=${BUILDKITE_SCOPE}\""$'\n'
 fi
 
-response="$(
-  printf '%sdata-urlencode = "grant_type=client_credentials"\ndata-urlencode = "client_id=%s"\ndata-urlencode = "client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"\ndata-urlencode = "client_assertion=%s"\nheader = "Accept: application/json"\n' \
-    "$scope_config" "$BUILDKITE_CLIENT_ID" "$oidc_token" |
-    request --fail-with-body "$TOKEN_ENDPOINT"
-)" || {
+# Holds only response headers, never tokens.
+headers_file="$(mktemp "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/buildkite-oidc-auth.XXXXXX")"
+trap 'rm -f "$headers_file"' EXIT
+
+retries=0
+waited=0
+while true; do
+  fetch_oidc_token
+  : >"$headers_file"
+
+  # The status code is appended on its own line so the body never touches disk.
+  # curl does not retry the exchange: only HTTP 429 is retried below, with a fresh assertion.
+  response="$(
+    printf '%sdata-urlencode = "grant_type=client_credentials"\ndata-urlencode = "client_id=%s"\ndata-urlencode = "client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"\ndata-urlencode = "client_assertion=%s"\nheader = "Accept: application/json"\n' \
+      "$scope_config" "$BUILDKITE_CLIENT_ID" "$oidc_token" |
+      request --dump-header "$headers_file" --write-out '\n%{http_code}' "$TOKEN_ENDPOINT"
+  )" || fail "Buildkite token exchange request failed"
+
+  status="${response##*$'\n'}"
+  response="${response%$'\n'*}"
+  [[ "$status" =~ ^[1-5][0-9][0-9]$ ]] ||
+    fail "Buildkite token exchange returned an indeterminate HTTP status"
+
+  [[ "$status" == 429 ]] || break
+
+  ((retries < MAX_RETRIES)) ||
+    fail "Buildkite token exchange is still rate limited (HTTP 429) after ${MAX_RETRIES} retries"
+  reset="$(reset_seconds "$headers_file")"
+  delay=$((reset + RANDOM % 3 + 1))
+  ((waited + delay <= MAX_TOTAL_WAIT)) ||
+    fail "Buildkite token exchange is rate limited (HTTP 429); waiting ${delay}s would exceed the ${MAX_TOTAL_WAIT}s retry budget"
+  retries=$((retries + 1))
+  waited=$((waited + delay))
+  echo "::warning title=Buildkite OIDC authentication::Buildkite token exchange rate limited (HTTP 429); retry ${retries}/${MAX_RETRIES} in ${delay}s" >&2
+  sleep "$delay"
+done
+
+if [[ "$status" != 2?? ]]; then
   echo "::group::Buildkite token exchange diagnostics" >&2
+  echo "HTTP status: ${status}" >&2
   describe_error "$response" >&2
   echo "OIDC token claims sent:" >&2
   describe_claims "$oidc_token" >&2
   echo "::endgroup::" >&2
   fail "Buildkite token exchange failed; check client-id, audience and the workload identity's issuer/subject/claims"
-}
+fi
 
 token="$(jq -er '.access_token | select(type == "string" and length > 0)' <<<"$response")" ||
   fail "Buildkite token exchange response did not contain an access_token"

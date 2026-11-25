@@ -14,6 +14,13 @@ The action requests a GitHub OIDC token for the configured audience, exchanges i
 Buildkite token and exposes it as the `token` output. Neither token is ever printed. It only
 authenticates: polling and token refresh are left to the caller.
 
+If Buildkite rate limits the exchange (HTTP 429), the action retries up to three times. Before each
+retry it waits for the number of seconds in the `RateLimit-WorkloadIdentityTokenExchange-Reset`
+response header plus 1–3 seconds of random jitter, and requests a fresh GitHub OIDC token because
+each one can only be exchanged once. It fails if that header is missing, duplicated or not a
+non-negative integer, or if the total wait would exceed 300 seconds. Any other HTTP error or
+network failure fails immediately.
+
 Calling jobs **must** set `permissions: id-token: write`, otherwise GitHub does not provide an OIDC
 token and the action fails. Both inputs are shown on the workload identity's page in Buildkite and
 are not secrets.
@@ -56,11 +63,12 @@ steps:
 
 The token is short-lived and is not refreshed; long-running jobs must run the action again.
 
-The runner needs `curl` 7.76 or newer (for `--fail-with-body`) and `jq`. GitHub-hosted Ubuntu 22.04 and 24.04 runners meet this.
+The runner needs `curl` and `jq`. GitHub-hosted Ubuntu runners include both.
 
 ## Development
 
-Tests stub `curl` and cover success, masking, missing permissions and failure modes:
+Tests stub `curl` and `sleep` and cover success, masking, missing permissions, rate-limit retries and
+failure modes:
 
 ```bash
 bash buildkite-oidc-auth/tests/exchange_test.sh
